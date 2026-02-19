@@ -1,0 +1,21 @@
+{
+  "name": "삶기록소 LifeArchive",
+  "short_name": "삶기록소",
+  "description": "가계부와 생활 기록을 한 곳에서 관리하는 나만의 아카이브",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -519,11 +519,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         else authMsg.textContent = "가입 확인 이메일을 확인해주세요! (이메일 인증 후 로그인 가능)";
     };
 
-    document.getElementById('btn-logout').onclick = async () => {
-        if (confirm('로그아웃 하시겠습니까?')) {
-            await supabaseClient.auth.signOut();
-        }
-    };
+    // --- Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker registered!'))
+                .catch(err => console.log('Service Worker failed:', err));
+        });
+    }
 
     // Initial Render
     refreshAllUI();
