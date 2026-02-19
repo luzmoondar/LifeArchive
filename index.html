@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>삶기록소</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="main-header">
+            <nav class="tab-nav">
+                <button class="tab-btn active" data-tab="stats">전체통계</button>
+                <button class="tab-btn" data-tab="account">가계부</button>
+                <button class="tab-btn" data-tab="monthly">생활먼슬리</button>
+            </nav>
+            <button id="btn-logout" class="logout-btn" style="display: none;">로그아웃</button>
+        </header>
+
+        <main class="content-area">
+            <!-- Total Statistics Tab -->
+            <section id="stats" class="tab-content active">
+                <div class="stats-layout">
+                    <div class="main-stats-area">
+                        <div class="summary-grid">
+                            <div class="summary-card income">
+                                <h3>총수입</h3>
+                                <p class="amount" id="total-income">0원</p>
+                            </div>
+                            <div class="summary-card expense">
+                                <h3>총지출</h3>
+                                <p class="amount" id="total-expense">0원</p>
+                            </div>
+                            <div class="summary-card savings">
+                                <h3>총저축</h3>
+                                <p class="amount" id="total-savings">0원</p>
+                            </div>
+                        </div>
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <h4>카테고리별 소비 %</h4>
+                                <div class="chart-wrapper">
+                                    <canvas id="expense-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-box">
+                                <h4>카테고리별 저축 %</h4>
+                                <div class="chart-wrapper">
+                                    <canvas id="savings-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="details-side">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>자산 요약</h4>
+                            </div>
+                            <div class="summary-info" style="margin-top: 1rem;">
+                                <p style="font-size: 0.9rem; color: var(--text-light); line-height: 1.6;">
+                                    기록된 데이터를 바탕으로 산출된 전체 통계입니다. 각 탭에서 상세 내역을 관리할 수 있습니다.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Account Book Tab -->
+            <section id="account" class="tab-content">
+                <div class="account-layout">
+                    <div class="calendar-side">
+                        <div id="account-calendar" class="calendar"></div>
+                    </div>
+                    <div class="details-side">
+                        <div class="summary-grid monthly-summary">
+                            <div class="summary-card income clickable" id="acc-income-card">
+                                <h3>이번 달 총수입</h3>
+                                <div class="amount" id="acc-monthly-income">0원</div>
+                            </div>
+                            <div class="summary-card expense">
+                                <h3>이번 달 총소비</h3>
+                                <div class="amount" id="acc-monthly-expense">0원</div>
+                            </div>
+                            <div class="summary-card savings">
+                                <h3>이번 달 총저축</h3>
+                                <div class="amount" id="acc-monthly-savings">0원</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="account-bottom-sections mt-4">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h4>소비 카테고리</h4>
+                            <button class="add-btn" id="add-expense-cat">+</button>
+                        </div>
+                        <div id="expense-category-grid" class="category-grid"></div>
+                    </div>
+
+                    <div class="section-card mt-4">
+                        <div class="section-header">
+                            <h4>저축 카테고리</h4>
+                            <button class="add-btn" id="add-savings-cat">+</button>
+                        </div>
+                        <div id="savings-category-grid" class="category-grid"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Life Monthly Tab -->
+            <section id="monthly" class="tab-content">
+                <div class="monthly-layout">
+                    <div class="calendar-side">
+                        <div id="life-calendar" class="calendar"></div>
+                    </div>
+                    <div class="details-side">
+                        <div class="section-card">
+                            <div class="section-header">
+                                <h4>이번달 이슈</h4>
+                            </div>
+                            <div class="todo-input">
+                                <input type="number" id="new-issue-day" placeholder="일" min="1" max="31">
+                                <input type="text" id="new-issue" placeholder="이슈 입력...">
+                                <button id="add-issue">추가</button>
+                            </div>
+                            <ul id="issue-list" class="todo-list"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card mt-4">
+                    <div class="section-header">
+                        <h4>기록 추가</h4>
+                    </div>
+                    <div class="form-group-row">
+                        <input type="number" id="life-day" placeholder="일" min="1" max="31">
+                        <input type="text" id="life-item" placeholder="내용">
+                        <input type="number" id="life-qty" placeholder="수량">
+                        <input type="number" id="life-amount" placeholder="금액">
+                        <button id="add-life-log">기록</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Data Entry Modal -->
+    <div id="entry-modal" class="modal-backdrop">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h4 id="modal-title">내역 추가</h4>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>날짜</label>
+                    <input type="date" id="modal-date">
+                </div>
+                <div class="form-group">
+                    <label>항목명</label>
+                    <input type="text" id="modal-name" placeholder="항목명을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label>금액</label>
+                    <input type="number" id="modal-amount" placeholder="금액을 입력하세요">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-entry" class="primary-btn">저장하기</button>
+            </div>
+            <div class="modal-history">
+                <h5>기존 내역</h5>
+                <div id="modal-entry-list" class="mini-entry-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="modal-backdrop active">
+        <div class="modal-content card" style="max-width: 400px; text-align: center;">
+            <h2 id="auth-title" style="margin-bottom: 20px;">삶기록소 시작하기</h2>
+            <div class="modal-body">
+                <div class="form-group" style="text-align: left;">
+                    <label>이메일</label>
+                    <input type="email" id="auth-email" placeholder="example@email.com">
+                </div>
+                <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                    <label>비밀번호</label>
+                    <input type="password" id="auth-password" placeholder="6자리 이상 입력">
+                </div>
+                <div class="auth-buttons" style="display: flex; gap: 10px;">
+                    <button id="btn-login" class="primary-btn" style="flex:1">로그인</button>
+                    <button id="btn-signup" class="secondary-btn" style="flex:1">회원가입</button>
+                </div>
+            </div>
+            <p id="auth-msg" style="margin-top: 15px; font-size: 0.85rem; color: var(--text-light);"></p>
+        </div>
+    </div>
+
+    <!-- Life Day Details Modal -->
+    <div id="life-day-modal" class="modal-backdrop">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h4 id="life-day-title">날짜별 상세 내용</h4>
+                <button class="close-modal"
+                    onclick="document.getElementById('life-day-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h5 class="section-title">📌 이번달 이슈</h5>
+                    <div id="life-day-issue-list" class="detailed-entry-list"></div>
+                </div>
+                <div class="modal-section mt-4">
+                    <h5 class="section-title">📝 생활 기록</h5>
+                    <div id="life-day-log-list" class="detailed-entry-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
