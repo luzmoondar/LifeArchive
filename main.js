@@ -91,15 +91,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Tab Navigation
     const tabs = document.querySelectorAll('.tab-btn');
+    const navItems = document.querySelectorAll('.nav-item');
     const contents = document.querySelectorAll('.tab-content');
+
+    window.switchTab = (tabId) => {
+        // 모든 활성 상태 초기화
+        tabs.forEach(t => t.classList.remove('active'));
+        navItems.forEach(n => n.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+
+        // 해당 탭 활성화
+        const targetContent = document.getElementById(tabId);
+        if (targetContent) targetContent.classList.add('active');
+
+        // 상단 버튼 동기화
+        tabs.forEach(t => {
+            if (t.dataset.tab === tabId || t.getAttribute('onclick')?.includes(tabId)) {
+                t.classList.add('active');
+            }
+        });
+
+        // 하단 내비게이션 동기화
+        navItems.forEach(n => {
+            if (n.getAttribute('onclick')?.includes(tabId)) {
+                n.classList.add('active');
+            }
+        });
+    };
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            const targetContent = document.getElementById(tab.dataset.tab);
-            if (targetContent) targetContent.classList.add('active');
+            const tabId = tab.dataset.tab;
+            switchTab(tabId);
         });
     });
 

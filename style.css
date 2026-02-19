@@ -171,16 +171,25 @@ body {
 }
 
 /* Layout for Stats, Account and Monthly */
-.stats-layout,
 .account-layout,
 .monthly-layout {
     display: grid;
     grid-template-columns: 1fr 350px;
-    /* 1fr을 사용하여 좌우 여백을 완벽하게 일치시킵니다 */
+    /* 가계부/먼슬리는 기능상 2단 유지 */
     gap: 2rem;
     width: 100%;
     margin: 0;
     padding: 0;
+}
+
+/* 통계 탭은 시원하게 1단으로 넓게 사용 */
+.stats-layout {
+    display: block;
+    width: 100%;
+}
+
+#stats .main-stats-area {
+    width: 100%;
 }
 
 .content-area {
@@ -194,12 +203,18 @@ body {
 #stats .summary-grid {
     grid-template-columns: repeat(3, 1fr);
     width: 100%;
+    gap: 2rem;
+    margin-bottom: 2rem;
 }
 
 #stats .charts-container {
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    gap: 2rem;
     width: 100%;
+}
+
+.details-side:empty {
+    display: none;
 }
 
 .calendar {
@@ -1058,5 +1073,70 @@ body {
 
     .chart-wrapper {
         height: 250px;
+    }
+
+    /* 하단 메뉴 바 스타일 */
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid var(--border);
+        padding: 0.75rem 0;
+        justify-content: space-around;
+        z-index: 1000;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .nav-item {
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--text-light);
+        cursor: pointer;
+        width: 33.33%;
+    }
+
+    .nav-item.active {
+        color: var(--primary);
+    }
+
+    .nav-icon {
+        font-size: 1.4rem;
+    }
+
+    .nav-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .app-container {
+        padding-bottom: 5rem;
+        /* 하단 바 공간 확보 */
+        border-radius: 0;
+        /* 모바일은 꽉 채우기 */
+        border: none;
+    }
+
+    .tab-nav {
+        display: none !important;
+        /* 모바일에서는 상단 탭 숨김 */
+    }
+
+    .main-header {
+        padding: 0 1rem;
+    }
+}
+
+/* PC에서는 하단 바 숨김 */
+@media (min-width: 1025px) {
+    .mobile-bottom-nav {
+        display: none;
     }
 }
