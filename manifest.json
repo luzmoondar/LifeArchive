@@ -2,7 +2,7 @@
   "name": "삶기록소 LifeArchive",
   "short_name": "삶기록소",
   "description": "가계부와 생활 기록을 한 곳에서 관리하는 나만의 아카이브",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6366f1",

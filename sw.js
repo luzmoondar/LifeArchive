@@ -1,10 +1,10 @@
 const CACHE_NAME = 'life-archive-v1';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/main.js',
-    '/style.css',
-    '/manifest.json'
+    './',
+    'index.html',
+    'main.js',
+    'style.css',
+    'manifest.json'
 ];
 
 // 설치 시 자산 캐싱
