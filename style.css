@@ -156,16 +156,19 @@ body {
 }
 
 .summary-card.income {
-    background-color: #f2f2fc;
+    background-color: #e4f9fc;
 }
 
 .summary-card.expense {
-    background-color: #fff2f2;
+    background-color: #fde8e9;
 }
 
-.summary-card.savings,
+.summary-card.savings {
+    background-color: #e8fdeb;
+}
+
 .summary-card.asset {
-    background-color: #ebf5f1;
+    background-color: #fdf7e8;
 }
 
 .summary-card .amount {
