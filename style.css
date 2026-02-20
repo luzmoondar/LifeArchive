@@ -211,9 +211,9 @@ body {
 }
 
 #stats .summary-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     width: 100%;
-    gap: 2rem;
+    gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
@@ -578,7 +578,7 @@ body {
     align-items: center;
 }
 
-.detailed-issue-item.checked span {
+.detailed-issue-item.checked .text-content {
     text-decoration: line-through;
     color: var(--text-light);
 }
@@ -706,8 +706,11 @@ body {
 }
 
 .todo-item.checked span {
-    text-decoration: line-through;
     color: var(--text-light);
+}
+
+.todo-item.checked .text-content {
+    text-decoration: line-through;
 }
 
 .mt-4 {

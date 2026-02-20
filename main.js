@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 item.innerHTML = `
                     <div style="display:flex; align-items:center; gap:10px;">
                         <input type="checkbox" ${issue.checked ? 'checked' : ''}>
-                        <span>${issue.text}</span>
+                        <span class="text-content">${issue.text}</span>
                     </div>
                     <div class="log-actions">
                         <button class="action-icon-btn edit" title="수정">✏️</button>
@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const li = document.createElement('li'); li.className = `todo-item ${issue.checked ? 'checked' : ''}`;
                 li.innerHTML = `
                 <input type="checkbox" ${issue.checked ? 'checked' : ''}> 
-                <span>${issue.date ? `<small style="color:var(--text-light); margin-right:5px;">${issue.date.slice(5)}</small>` : ''} ${issue.text}</span>
+                <span>${issue.date ? `<small style="color:var(--text-light); margin-right:5px;">${issue.date.slice(5)}</small>` : ''} <span class="text-content">${issue.text}</span></span>
                 <div class="todo-actions">
                     <button class="action-icon-btn edit" title="수정">
                         ✏️
