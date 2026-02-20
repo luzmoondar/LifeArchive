@@ -22,12 +22,96 @@
             <nav class="tab-nav">
                 <button class="tab-btn active" data-tab="stats">전체통계</button>
                 <button class="tab-btn" data-tab="account">가계부</button>
+                <button class="tab-btn" data-tab="detail">상세가계부</button>
                 <button class="tab-btn" data-tab="monthly">생활먼슬리</button>
             </nav>
             <button id="btn-logout" class="logout-btn" style="display: none;">로그아웃</button>
         </header>
 
         <main class="content-area">
+            <!-- ... existing tabs ... -->
+
+            <!-- Detailed Account Tab -->
+            <section id="detail" class="tab-content">
+                <div class="detail-grid">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="title-with-budget">
+                                <h4>개인소비</h4>
+                                <div class="budget-input-group">
+                                    <label>목표예산:</label>
+                                    <input type="number" id="personal-budget" placeholder="0">
+                                    <span>원</span>
+                                </div>
+                            </div>
+                            <button class="add-btn" id="add-personal-row">+</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="detail-table" id="personal-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>내용</th>
+                                        <th>금액</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="personal-table-body">
+                                    <!-- rows added here -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td class="total-label">합계</td>
+                                        <td class="total-amount" id="personal-total">0원</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="title-with-budget">
+                                <h4>공용소비</h4>
+                                <div class="budget-input-group">
+                                    <label>목표예산:</label>
+                                    <input type="number" id="shared-budget" placeholder="0">
+                                    <span>원</span>
+                                </div>
+                            </div>
+                            <button class="add-btn" id="add-shared-row">+</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="detail-table" id="shared-detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>내용</th>
+                                        <th>금액</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shared-table-body">
+                                    <!-- rows added here -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td class="total-label">합계</td>
+                                        <td class="total-amount" id="shared-total">0원</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-card mt-4 total-card">
+                    <div class="total-row">
+                        <span>전체 총 합계:</span>
+                        <span id="overall-detail-total">0원</span>
+                    </div>
+                </div>
+            </section>
             <!-- Total Statistics Tab -->
             <section id="stats" class="tab-content active">
                 <div class="stats-layout">
@@ -186,7 +270,11 @@
     <div id="entry-modal" class="modal-backdrop">
         <div class="modal-content card">
             <div class="modal-header">
-                <h4 id="modal-title">내역 추가</h4>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h4 id="modal-title">내역 추가</h4>
+                    <button id="btn-rename-cat" class="action-icon-btn" title="카테고리명 변경"
+                        style="display: none;">✏️</button>
+                </div>
                 <button class="close-modal">&times;</button>
             </div>
             <div class="modal-body">
@@ -232,6 +320,23 @@
                 </div>
             </div>
             <p id="auth-msg" style="margin-top: 15px; font-size: 0.85rem; color: var(--text-light);"></p>
+        </div>
+    </div>
+
+    <!-- Account Day Details Modal -->
+    <div id="acc-day-modal" class="modal-backdrop">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h4 id="acc-day-title">날짜별 상세 내역</h4>
+                <button class="close-modal"
+                    onclick="document.getElementById('acc-day-modal').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h5 class="section-title">💰 상세 내역</h5>
+                    <div id="acc-day-list" class="detailed-entry-list"></div>
+                </div>
+            </div>
         </div>
     </div>
 

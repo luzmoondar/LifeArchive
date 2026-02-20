@@ -157,6 +157,21 @@ body {
     color: #8b5cf6;
 }
 
+.income-text {
+    color: var(--primary);
+}
+
+.expense-text {
+    color: #d6336c;
+}
+
+/* 연분홍 진한색과 맞춤 */
+.savings-text {
+    color: #2b8a3e;
+}
+
+/* 연녹색 진한색과 맞춤 */
+
 .charts-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1267,6 +1282,129 @@ body {
     .stock-table td {
         padding: 0.75rem 0.5rem;
         font-size: 0.8rem;
+    }
+}
+
+/* Detailed Account Table Styles */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.title-with-budget {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.budget-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.budget-input-group input {
+    width: 100px !important;
+    padding: 0.3rem 0.5rem !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    text-align: right;
+    background: #f8fafc;
+}
+
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+@media (max-width: 1024px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.detail-table th {
+    background: #f8fafc;
+    padding: 0.75rem;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    border-bottom: 2px solid var(--border);
+}
+
+.detail-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail-table input {
+    width: 100%;
+    border: 1px solid transparent;
+    padding: 0.5rem;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.detail-table input:focus {
+    border-color: var(--primary);
+    background: #f1f5f9;
+    outline: none;
+}
+
+.detail-table .total-label {
+    font-weight: 700;
+    text-align: right;
+    background: #f8fafc;
+}
+
+.detail-table .total-amount {
+    font-weight: 800;
+    color: var(--primary);
+    background: #f8fafc;
+}
+
+.total-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%) !important;
+    color: white;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+#overall-detail-total {
+    font-size: 1.5rem;
+}
+
+.remove-row-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-row-btn:hover {
+    color: var(--danger);
+}
+
+@media (max-width: 768px) {
+    #stats .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 

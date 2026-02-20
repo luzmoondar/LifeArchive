@@ -23,6 +23,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         viewDates: {
             account: new Date().toISOString().slice(0, 7),
             life: new Date().toISOString().slice(0, 7)
+        },
+        detailData: {
+            personal: [],
+            shared: [],
+            budgets: {
+                personal: 0,
+                shared: 0
+            }
         }
     };
 
@@ -92,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCategoryGrids();
         renderIssues();
         renderStockList();
+        renderDetailTables();
         updateStats();
     }
 
@@ -224,6 +233,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (inc > 0) contentDiv.innerHTML += `<div class="day-label label-income">+${inc.toLocaleString()}</div>`;
                 if (exp > 0) contentDiv.innerHTML += `<div class="day-label label-expense">-${exp.toLocaleString()}</div>`;
                 if (sav > 0) contentDiv.innerHTML += `<div class="day-label label-savings">S:${sav.toLocaleString()}</div>`;
+
+                // 가계부 내역이 있으면 클릭 가능하게 설정
+                if (dayTrans.length > 0) {
+                    dayEl.classList.add('clickable-day');
+                    dayEl.onclick = () => openAccountDayModal(fullDate);
+                }
             } else {
                 // Issues Rendering
                 const dayIssues = state.issues.filter(i => i.date === fullDate);
@@ -310,6 +325,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
+
+        // 소비/저축 카테고리인 경우만 이름 변경 버튼 표시
+        const renameBtn = document.getElementById('btn-rename-cat');
+        if (type === 'expense' || type === 'savings') {
+            renameBtn.style.display = 'block';
+        } else {
+            renameBtn.style.display = 'none';
+        }
+
         modal.classList.add('active');
         renderModalHistory();
     }
@@ -321,6 +345,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
         if (d && n && a > 0) { state.transactions.push({ id: Date.now(), date: d, name: n, cat: currentModalTarget.category, amount: a, type: currentModalTarget.type }); saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); document.getElementById('modal-name').value = ''; document.getElementById('modal-amount').value = ''; }
+    };
+
+    document.getElementById('btn-rename-cat').onclick = () => {
+        const oldName = currentModalTarget.category;
+        const type = currentModalTarget.type;
+        const newName = prompt('새 카테고리 이름을 입력하세요:', oldName);
+
+        if (newName && newName !== oldName) {
+            if (state.categories[type].includes(newName)) {
+                alert('이미 존재하는 카테고리 이름입니다.');
+                return;
+            }
+
+            // 1. 카테고리 목록 업데이트
+            const idx = state.categories[type].indexOf(oldName);
+            if (idx !== -1) {
+                state.categories[type][idx] = newName;
+            }
+
+            // 2. 관련 내역들의 카테고리명 일괄 변경
+            state.transactions.forEach(t => {
+                if (t.type === type && t.cat === oldName) {
+                    t.cat = newName;
+                }
+            });
+
+            // 3. 상태 업데이트 및 UI 갱신
+            currentModalTarget.category = newName;
+            document.getElementById('modal-title').textContent = `${newName} - 내역 추가`;
+            saveState();
+            refreshAllUI();
+            alert('카테고리 이름이 변경되었습니다.');
+        }
     };
 
     function renderModalHistory() {
@@ -354,6 +411,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.querySelector('.delete-btn').onclick = () => { if (confirm('이 내역을 삭제하시겠습니까?')) { state.transactions = state.transactions.filter(t => t.id !== entry.id); saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); } };
             list.appendChild(item);
         });
+    }
+
+    // --- Account Day Modal ---
+    function openAccountDayModal(date) {
+        const modal = document.getElementById('acc-day-modal');
+        document.getElementById('acc-day-title').textContent = `${date} 상세 내역`;
+        renderAccountDayContent(date);
+        modal.classList.add('active');
+    }
+
+    function renderAccountDayContent(date) {
+        const list = document.getElementById('acc-day-list');
+        list.innerHTML = '';
+        const dayTrans = state.transactions.filter(t => t.date === date);
+
+        if (dayTrans.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-light); font-size:0.9rem;">기록된 내역이 없습니다.</p>';
+        } else {
+            dayTrans.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'detailed-log-item';
+                // 타입별 색상 클래스 결정
+                let typeColorClass = '';
+                if (t.type === 'income') typeColorClass = 'income-text';
+                else if (t.type === 'expense') typeColorClass = 'expense-text';
+                else if (t.type === 'savings') typeColorClass = 'savings-text';
+
+                item.innerHTML = `
+                    <div class="log-main">
+                        <div class="log-header">
+                            <strong>[${t.cat}] ${t.name}</strong>
+                        </div>
+                        <div class="log-amount ${typeColorClass}">${t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}원</div>
+                    </div>
+                    <div class="log-actions">
+                        <button class="action-icon-btn delete" title="삭제">❌</button>
+                    </div>
+                `;
+                item.querySelector('.delete').onclick = () => {
+                    if (confirm('이 내역을 삭제하시겠습니까?')) {
+                        state.transactions = state.transactions.filter(tr => tr.id !== t.id);
+                        saveState();
+                        renderAccountDayContent(date);
+                        refreshCalendars();
+                        updateStats();
+                        renderCategoryGrids();
+                    }
+                };
+                list.appendChild(item);
+            });
+        }
     }
 
     // --- Life Day Modal ---
@@ -629,6 +737,108 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .catch(err => console.log('Service Worker failed:', err));
         });
     }
+
+    // --- Detailed Account Tab Logic ---
+    function renderDetailTables() {
+        renderDetailTable('personal', 'personal-table-body');
+        renderDetailTable('shared', 'shared-table-body');
+        syncBudgetInputs();
+        updateOverallTotal();
+    }
+
+    function syncBudgetInputs() {
+        const pBudgetInput = document.getElementById('personal-budget');
+        const sBudgetInput = document.getElementById('shared-budget');
+        if (pBudgetInput) {
+            pBudgetInput.value = state.detailData.budgets.personal || '';
+            pBudgetInput.oninput = (e) => {
+                state.detailData.budgets.personal = parseInt(e.target.value) || 0;
+                saveToLocal();
+            };
+        }
+        if (sBudgetInput) {
+            sBudgetInput.value = state.detailData.budgets.shared || '';
+            sBudgetInput.oninput = (e) => {
+                state.detailData.budgets.shared = parseInt(e.target.value) || 0;
+                saveToLocal();
+            };
+        }
+    }
+
+    function renderDetailTable(type, bodyId) {
+        const body = document.getElementById(bodyId);
+        if (!body) return;
+        body.innerHTML = '';
+
+        const data = state.detailData[type];
+        // 처음 사용하거나 데이터가 없을 때 20칸 기본 생성
+        if (data.length === 0) {
+            for (let i = 0; i < 20; i++) {
+                data.push({ id: Date.now() + i, title: '', amount: 0 });
+            }
+        }
+
+        data.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="detail-title" value="${item.title}" placeholder="내용 입력"></td>
+                <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
+                <td><button class="remove-row-btn" title="삭제">&times;</button></td>
+            `;
+
+            const titleInput = tr.querySelector('.detail-title');
+            const amountInput = tr.querySelector('.detail-amount');
+            const removeBtn = tr.querySelector('.remove-row-btn');
+
+            titleInput.oninput = (e) => {
+                item.title = e.target.value;
+                saveToLocal();
+            };
+
+            amountInput.oninput = (e) => {
+                item.amount = parseInt(e.target.value) || 0;
+                updateDetailTotals(type);
+                saveToLocal();
+            };
+
+            removeBtn.onclick = () => {
+                state.detailData[type].splice(index, 1);
+                saveState();
+                renderDetailTables();
+            };
+
+            body.appendChild(tr);
+        });
+
+        updateDetailTotals(type);
+    }
+
+    function updateDetailTotals(type) {
+        const total = state.detailData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
+        const totalEl = document.getElementById(`${type}-total`);
+        if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
+        updateOverallTotal();
+    }
+
+    function updateOverallTotal() {
+        const pTotal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const sTotal = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const overall = pTotal + sTotal;
+        const overallEl = document.getElementById('overall-detail-total');
+        if (overallEl) overallEl.textContent = `${overall.toLocaleString()}원`;
+    }
+
+    document.getElementById('add-personal-row').onclick = () => {
+        state.detailData.personal.push({ id: Date.now(), title: '', amount: 0 });
+        saveState();
+        renderDetailTables();
+    };
+
+    document.getElementById('add-shared-row').onclick = () => {
+        state.detailData.shared.push({ id: Date.now(), title: '', amount: 0 });
+        saveState();
+        renderDetailTables();
+    };
 
     // Initial Render
     refreshAllUI();
