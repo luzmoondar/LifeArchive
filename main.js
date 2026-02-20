@@ -37,7 +37,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 로컬 데이터 먼저 불러오기
     const localData = localStorage.getItem('life-state');
     if (localData) {
-        state = JSON.parse(localData);
+        const parsed = JSON.parse(localData);
+        state = {
+            ...state,
+            ...parsed,
+            detailData: {
+                ...state.detailData,
+                ...(parsed.detailData || {})
+            }
+        };
         // 앱 실행 시 항상 현재 날짜로 초기화하여 가계부/먼슬리가 이번 달을 보여주게 함
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
@@ -61,7 +69,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (data && data.length > 0) {
                 const cloudData = JSON.parse(data[0].content);
-                state = { ...state, ...cloudData };
+                // 기존 데이터와 합칠 때 detailData 구조가 빠지지 않도록 보장
+                state = {
+                    ...state,
+                    ...cloudData,
+                    detailData: {
+                        ...state.detailData,
+                        ...(cloudData.detailData || {})
+                    }
+                };
                 saveToLocal();
                 refreshAllUI();
                 console.log("Supabase 데이터와 동기화되었습니다.");
@@ -141,30 +157,42 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function updateStats() {
         const currentMonth = state.viewDates.account;
+
+        // 상세가계부 합계 계산
+        const detailPersonalTotal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const detailSharedTotal = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const totalDetailExpense = detailPersonalTotal + detailSharedTotal;
+
+        // 전체 통계용 (All Time)
         const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const totalBaseExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpense = totalBaseExpense + totalDetailExpense; // 상세지출 포함
         const totalSavings = state.transactions.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('total-income').textContent = `${totalIncome.toLocaleString()}원`;
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
+        // 총 보유자산 (수입 - 소비 - 저축 + 초기 자산내역)
+        const balance = totalIncome - totalExpense - totalSavings;
+        const assetEntries = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
+        const totalAsset = balance + assetEntries;
+
         const totalAssetStatsEl = document.getElementById('total-asset-stats');
-        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
         if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
 
+        // 이번 달 통계용
         const monthlyIncome = state.transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
-        const monthlyExpense = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
+        const monthlyBaseExpense = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
+        // 상세가계부는 '현재 선택된 달'의 데이터라고 가정 (별도 날짜 필드가 없으므로)
+        const monthlyExpense = monthlyBaseExpense + totalDetailExpense;
         const monthlySavings = state.transactions.filter(t => t.type === 'savings' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('acc-monthly-income').textContent = `${monthlyIncome.toLocaleString()}원`;
         document.getElementById('acc-monthly-expense').textContent = `${monthlyExpense.toLocaleString()}원`;
         document.getElementById('acc-monthly-savings').textContent = `${monthlySavings.toLocaleString()}원`;
 
-        // 잔액 및 자산 계산
         const monthlyBalance = monthlyIncome - monthlyExpense - monthlySavings;
-        // totalAsset은 상단에서 이미 계산됨 (통계용과 동일)
-
         const balanceEl = document.getElementById('acc-monthly-balance');
         const assetEl = document.getElementById('acc-total-asset');
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
@@ -186,10 +214,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
 
+        // 소비 데이터 취합 (카테고리별 + 상세가계부 합산)
         const expenseData = state.categories.expense.map(cat => ({
             name: cat,
             value: state.transactions.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
+
+        // 상세가계부 데이터 추가
+        const detailPersonal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const detailShared = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+        if (detailPersonal > 0) expenseData.push({ name: '상세(개인)', value: detailPersonal });
+        if (detailShared > 0) expenseData.push({ name: '상세(공용)', value: detailShared });
+
         const savingsData = state.categories.savings.map(cat => ({
             name: cat,
             value: state.transactions.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
@@ -201,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 labels: labels,
                 datasets: [{
                     data: dataValues,
-                    backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#ec4899', '#8b5cf6', '#a5b4fc', '#f9a8d4'],
                     borderWidth: 0
                 }]
             },
@@ -825,12 +862,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!body) return;
         body.innerHTML = '';
 
+        if (!state.detailData) state.detailData = { personal: [], shared: [], budgets: { personal: 0, shared: 0 } };
+        if (!state.detailData[type]) state.detailData[type] = [];
         const data = state.detailData[type];
 
-        // 데이터가 20개 미만이면 20개가 될 때까지 빈 칸 추가
+        let stateChanged = false;
+        // 데이터가 20개 미만이면 20개가 될 때까지 빈 칸 추가 (아이디 겹치지 않게 유의)
         while (data.length < 20) {
-            data.push({ id: crypto.randomUUID(), title: '', amount: 0 });
+            data.push({ id: 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), title: '', amount: 0 });
+            stateChanged = true;
         }
+        if (stateChanged) saveToLocal();
 
         data.forEach((item, index) => {
             const tr = document.createElement('tr');
