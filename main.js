@@ -434,8 +434,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const item = document.createElement('div');
                 item.className = 'detailed-log-item';
                 item.innerHTML = `
-                    <div class="log-header"><strong>${log.item}</strong> <span>수량: ${log.qty}</span></div>
-                    <div class="log-amount">금액: ${parseInt(log.amount || 0).toLocaleString()}원</div>
+                    <div class="log-main">
+                        <div class="log-header"><strong>${log.item}</strong> <span>수량: ${log.qty}</span></div>
+                        <div class="log-amount">금액: ${parseInt(log.amount || 0).toLocaleString()}원</div>
+                    </div>
                     <div class="log-actions">
                         <button class="action-icon-btn edit" title="수정">✏️</button>
                         <button class="action-icon-btn delete" title="삭제">❌</button>

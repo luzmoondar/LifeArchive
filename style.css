@@ -594,12 +594,20 @@ body {
     padding: 1rem;
     border-radius: 0.75rem;
     border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.log-main {
+    flex: 1;
 }
 
 .detailed-log-item .log-header {
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
+    gap: 10px;
+    margin-bottom: 0.25rem;
 }
 
 .detailed-log-item .log-amount {
@@ -607,13 +615,20 @@ body {
     color: var(--primary);
 }
 
-.detailed-log-item .log-actions {
+.log-actions {
     margin-top: 1rem;
     padding-top: 0.5rem;
     border-top: 1px dashed var(--border);
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
+}
+
+.detailed-issue-item .log-actions,
+.detailed-log-item .log-actions {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .calendar-day.clickable-day {
