@@ -90,7 +90,7 @@ body {
 .tab-nav {
     display: flex;
     gap: 1rem;
-    background: #f2f3f4;
+    background: #f5f5ff;
     padding: 0.5rem;
     border-radius: 1rem;
 }
@@ -142,7 +142,7 @@ body {
 }
 
 .summary-card {
-    background: #f2f3f4;
+    background: #f5f5ff;
     padding: 1.5rem;
     border-radius: 1.5rem;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
@@ -155,36 +155,29 @@ body {
     margin-bottom: 0.5rem;
 }
 
-.summary-card.income {
-    background-color: #e4f9fc;
-}
-
-.summary-card.expense {
-    background-color: #fde8e9;
-}
-
-.summary-card.savings {
-    background-color: #e8fdeb;
-}
-
-.summary-card.asset {
-    background-color: #fdf7e8;
-}
-
 .summary-card .amount {
     font-size: 1.8rem;
     font-weight: 700;
-    color: #1e293b;
-    /* 모든 금액 텍스트 컬러 통일 */
 }
 
-/* 기존 개별 컬러 지정 제거 */
-.income .amount,
-.expense .amount,
-.savings .amount,
-.balance .amount,
+.income .amount {
+    color: var(--primary);
+}
+
+.expense .amount {
+    color: var(--danger);
+}
+
+.savings .amount {
+    color: var(--success);
+}
+
+.balance .amount {
+    color: var(--text);
+}
+
 .asset .amount {
-    color: #1e293b;
+    color: #ff7d0c;
 }
 
 .income-text {
