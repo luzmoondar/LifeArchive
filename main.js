@@ -826,17 +826,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         body.innerHTML = '';
 
         const data = state.detailData[type];
-        // 처음 사용하거나 데이터가 없을 때 20칸 기본 생성
-        if (data.length === 0) {
-            for (let i = 0; i < 20; i++) {
-                data.push({ id: Date.now() + i, title: '', amount: 0 });
-            }
+
+        // 데이터가 20개 미만이면 20개가 될 때까지 빈 칸 추가
+        while (data.length < 20) {
+            data.push({ id: crypto.randomUUID(), title: '', amount: 0 });
         }
 
         data.forEach((item, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="detail-title" value="${item.title}" placeholder="내용 입력"></td>
+                <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"></td>
                 <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
                 <td><button class="remove-row-btn" title="삭제">&times;</button></td>
             `;
@@ -898,13 +897,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     document.getElementById('add-personal-row').onclick = () => {
-        state.detailData.personal.push({ id: Date.now(), title: '', amount: 0 });
+        state.detailData.personal.push({ id: crypto.randomUUID(), title: '', amount: 0 });
         saveState();
         renderDetailTables();
     };
 
     document.getElementById('add-shared-row').onclick = () => {
-        state.detailData.shared.push({ id: Date.now(), title: '', amount: 0 });
+        state.detailData.shared.push({ id: crypto.randomUUID(), title: '', amount: 0 });
         saveState();
         renderDetailTables();
     };
