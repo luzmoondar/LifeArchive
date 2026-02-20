@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Tab Navigation
     const tabs = document.querySelectorAll('.tab-btn');
-    const navItems = document.querySelectorAll('.nav-item');
+    const navItems = []; // Mobile bottom nav removed
     const contents = document.querySelectorAll('.tab-content');
 
     window.switchTab = (tabId) => {
@@ -111,12 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // 하단 내비게이션 동기화
-        navItems.forEach(n => {
-            if (n.getAttribute('onclick')?.includes(tabId)) {
-                n.classList.add('active');
-            }
-        });
+
     };
 
     tabs.forEach(tab => {

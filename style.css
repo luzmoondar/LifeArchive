@@ -1117,16 +1117,19 @@ body {
     }
 
     .app-container {
-        padding-bottom: 5rem;
-        /* 하단 바 공간 확보 */
+        padding-bottom: 1rem;
         border-radius: 0;
         /* 모바일은 꽉 채우기 */
         border: none;
     }
 
     .tab-nav {
-        display: none !important;
-        /* 모바일에서는 상단 탭 숨김 */
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+        background: #f1f5f9;
+        padding: 0.4rem;
+        width: 100%;
     }
 
     .main-header {
@@ -1134,9 +1137,7 @@ body {
     }
 }
 
-/* PC에서는 하단 바 숨김 */
-@media (min-width: 1025px) {
-    .mobile-bottom-nav {
-        display: none;
-    }
+/* PC 및 모바일 공통: 하단 바 숨김 */
+.mobile-bottom-nav {
+    display: none !important;
 }
