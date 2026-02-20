@@ -173,10 +173,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
-        // 총 보유자산 (수입 - 소비 - 저축 + 초기 자산내역)
-        const balance = totalIncome - totalExpense - totalSavings;
-        const assetEntries = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
-        const totalAsset = balance + assetEntries;
+        // 총 보유자산 (수입/지출 합산 없이, '자산' 항목에 입력된 금액만 합산)
+        // 사용자가 "총보유자산이 왜 늘어났지? 내가 적어넣은것만 기재해줘"라고 요청함.
+        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
 
         const totalAssetStatsEl = document.getElementById('total-asset-stats');
         if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
@@ -833,7 +832,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDetailTable('personal', 'personal-table-body');
         renderDetailTable('shared', 'shared-table-body');
         syncBudgetInputs();
-        updateOverallTotal();
     }
 
     function syncBudgetInputs() {
@@ -877,6 +875,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         data.forEach((item, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
                 <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"></td>
                 <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
                 <td><button class="remove-row-btn" title="삭제">&times;</button></td>
@@ -923,20 +922,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 남은 금액이 음수(예산 초과)면 빨간색으로 표시
             remainingEl.style.color = remaining < 0 ? '#ef4444' : '#2b8a3e';
         }
-
-        updateOverallTotal();
     }
 
-    function updateOverallTotal() {
-        const pTotal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const sTotal = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-        const pOverallEl = document.getElementById('personal-overall-total');
-        const sOverallEl = document.getElementById('shared-overall-total');
-
-        if (pOverallEl) pOverallEl.textContent = `${pTotal.toLocaleString()}원`;
-        if (sOverallEl) sOverallEl.textContent = `${sTotal.toLocaleString()}원`;
-    }
 
     document.getElementById('add-personal-row').onclick = () => {
         state.detailData.personal.push({ id: crypto.randomUUID(), title: '', amount: 0 });

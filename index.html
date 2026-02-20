@@ -50,6 +50,7 @@
                             <table class="detail-table" id="personal-detail-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px;">No.</th>
                                         <th>내용</th>
                                         <th>금액</th>
                                         <th style="width: 40px;"></th>
@@ -60,12 +61,12 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td class="total-label">합계</td>
+                                        <td colspan="2" class="total-label">합계</td>
                                         <td class="total-amount" id="personal-total">0원</td>
                                         <td></td>
                                     </tr>
                                     <tr class="remaining-row">
-                                        <td class="total-label">남은 금액</td>
+                                        <td colspan="2" class="total-label">남은 금액</td>
                                         <td class="remaining-amount" id="personal-remaining">0원</td>
                                         <td></td>
                                     </tr>
@@ -90,6 +91,7 @@
                             <table class="detail-table" id="shared-detail-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 40px;">No.</th>
                                         <th>내용</th>
                                         <th>금액</th>
                                         <th style="width: 40px;"></th>
@@ -100,12 +102,12 @@
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td class="total-label">합계</td>
+                                        <td colspan="2" class="total-label">합계</td>
                                         <td class="total-amount" id="shared-total">0원</td>
                                         <td></td>
                                     </tr>
                                     <tr class="remaining-row">
-                                        <td class="total-label">남은 금액</td>
+                                        <td colspan="2" class="total-label">남은 금액</td>
                                         <td class="remaining-amount" id="shared-remaining">0원</td>
                                         <td></td>
                                     </tr>
@@ -115,17 +117,7 @@
                     </div>
                 </div>
 
-                <div class="section-card mt-4 total-card detail-summary-card">
-                    <div class="summary-item">
-                        <span>개인소비 합계:</span>
-                        <span id="personal-overall-total">0원</span>
-                    </div>
-                    <div class="summary-divider"></div>
-                    <div class="summary-item">
-                        <span>공용소비 합계:</span>
-                        <span id="shared-overall-total">0원</span>
-                    </div>
-                </div>
+
             </section>
             <!-- Total Statistics Tab -->
             <section id="stats" class="tab-content active">
