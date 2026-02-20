@@ -988,8 +988,10 @@ body {
 }
 
 .label-income {
-    background: #dcfce7;
-    color: #15803d;
+    background: #e7f5ff;
+    /* 연파랑 배경 */
+    color: #1971c2;
+    /* 진한 파랑 텍스트 */
 }
 
 .label-expense {
@@ -1007,9 +1009,19 @@ body {
 }
 
 .label-issue {
-    background: #e0f2fe;
-    /* Light Blue */
-    color: #0369a1;
+    background: #fff9db;
+    /* 연노랑 배경 */
+    color: #f08c00;
+    /* 진한 오렌지/노랑 텍스트 */
+}
+
+.label-issue.checked {
+    background: #f1f5f9;
+    /* 연회색 배경 */
+    color: #adb5bd;
+    /* 흐린 회색 텍스트 */
+    text-decoration: line-through;
+    /* 달력에서도 취소선 추가 */
 }
 
 .label-life {

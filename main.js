@@ -178,16 +178,69 @@ document.addEventListener('DOMContentLoaded', async () => {
             const el = document.getElementById(id);
             return el ? el.getContext('2d') : null;
         };
-        const expenseData = state.categories.expense.map(cat => ({ name: cat, value: state.transactions.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0) }));
-        const savingsData = state.categories.savings.map(cat => ({ name: cat, value: state.transactions.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0) }));
-        const chartConfig = (labels, data) => ({
-            type: 'doughnut', data: { labels, datasets: [{ data, backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#ec4899', '#8b5cf6'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+
+        const formatLabels = (data, total) => {
+            return data.map(d => {
+                const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                return `${d.name} (${pct}%)`;
+            });
+        };
+
+        const expenseData = state.categories.expense.map(cat => ({
+            name: cat,
+            value: state.transactions.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+        }));
+        const savingsData = state.categories.savings.map(cat => ({
+            name: cat,
+            value: state.transactions.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+        }));
+
+        const chartConfig = (labels, dataValues) => ({
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed !== undefined) {
+                                    label += context.parsed.toLocaleString() + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
         });
+
         const exCtx = getCtx('expense-chart');
-        if (exCtx) { if (expenseChart) expenseChart.destroy(); expenseChart = new Chart(exCtx, chartConfig(expenseData.map(d => d.name), expenseData.map(d => totalExpense > 0 ? (d.value / totalExpense) * 100 : 0))); }
+        if (exCtx) {
+            if (expenseChart) expenseChart.destroy();
+            const labels = formatLabels(expenseData, totalExpense);
+            const values = expenseData.map(d => totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0);
+            expenseChart = new Chart(exCtx, chartConfig(labels, values));
+        }
+
         const svCtx = getCtx('savings-chart');
-        if (svCtx) { if (savingsChart) savingsChart.destroy(); savingsChart = new Chart(svCtx, chartConfig(savingsData.map(d => d.name), savingsData.map(d => totalSavings > 0 ? (d.value / totalSavings) * 100 : 0))); }
+        if (svCtx) {
+            if (savingsChart) savingsChart.destroy();
+            const labels = formatLabels(savingsData, totalSavings);
+            const values = savingsData.map(d => totalSavings > 0 ? Math.round((d.value / totalSavings) * 100) : 0);
+            savingsChart = new Chart(svCtx, chartConfig(labels, values));
+        }
     }
 
     // --- Calendar Implementation ---
@@ -243,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Issues Rendering
                 const dayIssues = state.issues.filter(i => i.date === fullDate);
                 dayIssues.forEach(issue => {
-                    contentDiv.innerHTML += `<div class="day-label label-issue">${issue.checked ? '✓' : ''} ${issue.text}</div>`;
+                    contentDiv.innerHTML += `<div class="day-label label-issue ${issue.checked ? 'checked' : ''}">${issue.checked ? '✓' : ''} ${issue.text}</div>`;
                 });
 
                 // Life Logs Rendering
