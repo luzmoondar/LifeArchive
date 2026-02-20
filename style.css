@@ -90,7 +90,7 @@ body {
 .tab-nav {
     display: flex;
     gap: 1rem;
-    background: #f5f5ff;
+    background: #f7f7ff;
     padding: 0.5rem;
     border-radius: 1rem;
 }
@@ -142,7 +142,7 @@ body {
 }
 
 .summary-card {
-    background: #f5f5ff;
+    background: #f7f7ff;
     padding: 1.5rem;
     border-radius: 1.5rem;
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
