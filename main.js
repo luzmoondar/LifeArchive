@@ -143,6 +143,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('acc-monthly-expense').textContent = `${monthlyExpense.toLocaleString()}원`;
         document.getElementById('acc-monthly-savings').textContent = `${monthlySavings.toLocaleString()}원`;
 
+        // 잔액 및 자산 계산
+        const monthlyBalance = monthlyIncome - monthlyExpense - monthlySavings;
+        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
+
+        const balanceEl = document.getElementById('acc-monthly-balance');
+        const assetEl = document.getElementById('acc-total-asset');
+        if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
+        if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
+
         updateCharts(totalExpense, totalSavings);
     }
 
@@ -284,6 +293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saveBtn = document.getElementById('save-entry');
 
     document.getElementById('acc-income-card').onclick = () => openModal('수입', 'income');
+    document.getElementById('acc-asset-card').onclick = () => openModal('자산', 'asset');
 
     function openModal(category, type) {
         currentModalTarget = { category, type };
@@ -307,10 +317,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderModalHistory() {
         const list = document.getElementById('modal-entry-list');
         list.innerHTML = '';
-        const entries = state.transactions.filter(t => (t.cat === currentModalTarget.category || (currentModalTarget.type === 'income' && t.type === 'income')) && t.type === currentModalTarget.type && t.date.startsWith(state.viewDates.account));
+        const entries = state.transactions.filter(t => {
+            const isMatchCat = (t.cat === currentModalTarget.category);
+            const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
+            const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
+            const isMonthMatch = t.date.startsWith(state.viewDates.account);
+
+            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isMonthMatch;
+        });
         entries.sort((a, b) => b.id - a.id).forEach(entry => {
             const item = document.createElement('div'); item.className = 'mini-entry';
-            item.innerHTML = `<div class="entry-info"><strong>${entry.name}</strong><span class="entry-date">${entry.date}</span></div><span>${entry.amount.toLocaleString()}원 <button class="delete-btn" style="padding:0; margin-left:5px;">&times;</button></span>`;
+            item.innerHTML = `
+                <div class="entry-info">
+                    <strong>${entry.name}</strong>
+                    <span class="entry-date">${entry.date}</span>
+                </div>
+                <div class="entry-actions">
+                    <span class="amount-text">${entry.amount.toLocaleString()}원</span>
+                    <button class="delete-btn" title="삭제">&times;</button>
+                </div>
+            `;
             item.querySelector('.delete-btn').onclick = () => { if (confirm('이 내역을 삭제하시겠습니까?')) { state.transactions = state.transactions.filter(t => t.id !== entry.id); saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); } };
             list.appendChild(item);
         });
