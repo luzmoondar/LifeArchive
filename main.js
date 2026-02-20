@@ -237,7 +237,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 labels: labels,
                 datasets: [{
                     data: dataValues,
-                    backgroundColor: ['#6366f1', '#10b981', '#ef4444', '#f59e0b', '#ec4899', '#8b5cf6', '#a5b4fc', '#f9a8d4'],
+                    backgroundColor: [
+                        '#a5b4fc', // Pastel Indigo
+                        '#6ee7b7', // Pastel Emerald
+                        '#fda4af', // Pastel Rose
+                        '#fcd34d', // Pastel Amber
+                        '#f9a8d4', // Pastel Pink
+                        '#c4b5fd', // Pastel Violet
+                        '#93c5fd', // Pastel Blue
+                        '#86efac'  // Pastel Green
+                    ],
                     borderWidth: 0
                 }]
             },
