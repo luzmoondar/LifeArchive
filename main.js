@@ -140,6 +140,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
+        const totalAssetStatsEl = document.getElementById('total-asset-stats');
+        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
+        if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
+
         const monthlyIncome = state.transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
         const monthlyExpense = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
         const monthlySavings = state.transactions.filter(t => t.type === 'savings' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
@@ -150,7 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 잔액 및 자산 계산
         const monthlyBalance = monthlyIncome - monthlyExpense - monthlySavings;
-        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
+        // totalAsset은 상단에서 이미 계산됨 (통계용과 동일)
 
         const balanceEl = document.getElementById('acc-monthly-balance');
         const assetEl = document.getElementById('acc-total-asset');
@@ -327,6 +331,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
             const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
             const isMonthMatch = t.date.startsWith(state.viewDates.account);
+
+            // 자산(asset)인 경우 월 필터를 적용하지 않고 전체 내역을 보여줌
+            if (currentModalTarget.type === 'asset') {
+                return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
+            }
 
             return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isMonthMatch;
         });
