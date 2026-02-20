@@ -186,6 +186,11 @@ body {
     text-align: center;
 }
 
+.chart-box h4 {
+    margin-bottom: 2rem;
+    color: var(--text-light);
+}
+
 .chart-wrapper {
     height: 300px;
     display: flex;

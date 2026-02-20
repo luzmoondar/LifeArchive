@@ -232,25 +232,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }));
 
         const pinkColors = [
-            '#d6336c', // Base Pink
-            '#e64980',
-            '#f06595',
-            '#ff8787',
-            '#faa2c1',
-            '#f783ac',
-            '#a61e4d',
-            '#c2255c'
+            '#fbcfe8', // pink-200
+            '#f9a8d4', // pink-300
+            '#f472b6', // pink-400
+            '#fda4af', // rose-300
+            '#fb7185', // rose-400
+            '#fce7f3', // pink-100
+            '#ffe4e6', // rose-100
+            '#ec4899'  // pink-500 (point)
         ];
 
         const greenColors = [
-            '#2b8a3e', // Base Green
-            '#40c057',
-            '#51cf66',
-            '#69db7c',
-            '#8ce99a',
-            '#96f2d7',
-            '#38d9a9',
-            '#0ca678'
+            '#bbf7d0', // green-200
+            '#86efac', // green-300
+            '#4ade80', // green-400
+            '#a7f3d0', // emerald-200
+            '#6ee7b7', // emerald-300
+            '#dcfce7', // green-100
+            '#d1fae5', // emerald-100
+            '#34d399'  // emerald-400 (point)
         ];
 
         const chartConfig = (labels, dataValues, colors) => ({
