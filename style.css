@@ -177,7 +177,7 @@ body {
 }
 
 .asset .amount {
-    color: #8b5cf6;
+    color: #ff7d0c;
 }
 
 .income-text {
@@ -219,7 +219,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-bottom: 2rem;
+    /* 도넛차트 아래 여백 추가 */
 }
+
+
 
 /* Layout for Stats, Account and Monthly */
 .account-layout,
@@ -1038,10 +1042,8 @@ body {
 }
 
 .label-income {
-    background: #e7f5ff;
-    /* 연파랑 배경 */
-    color: #1971c2;
-    /* 진한 파랑 텍스트 */
+    background: #dcddf5;
+    color: #6366f1;
 }
 
 .label-expense {
@@ -1052,10 +1054,8 @@ body {
 }
 
 .label-savings {
-    background: #ebfbee;
-    /* 연녹색 배경 */
-    color: #2b8a3e;
-    /* 진한 초록 텍스트 */
+    background: #d8f0e8;
+    color: #10b981;
 }
 
 .label-issue {
