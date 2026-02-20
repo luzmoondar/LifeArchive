@@ -107,9 +107,9 @@ body {
 }
 
 .tab-btn.active {
-    background: white;
-    color: var(--primary);
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .tab-content {
@@ -1073,9 +1073,9 @@ body {
 }
 
 .label-life {
-    background: #f1f5f9;
-    /* Light Gray */
-    color: #475569;
+    background: #d7fcfa;
+    color: #0f766e;
+    /* 민트 계열 진한 텍스트로 가독성 확보 */
 }
 
 .calendar-day:hover {
