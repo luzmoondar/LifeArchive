@@ -39,90 +39,98 @@
 
                 <!-- Detailed Account Tab -->
                 <section id="detail" class="tab-content">
-                    <div class="detail-grid">
-                        <div class="section-card">
-                            <div class="section-header">
-                                <div class="title-with-budget">
-                                    <h4>개인소비</h4>
-                                    <div class="budget-input-group">
-                                        <label>목표예산:</label>
-                                        <input type="number" id="personal-budget" placeholder="0">
-                                        <span>원</span>
-                                    </div>
-                                </div>
-                                <button class="add-btn" id="add-personal-row">+</button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="detail-table" id="personal-detail-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px;">No.</th>
-                                            <th>내용</th>
-                                            <th>금액</th>
-                                            <th style="width: 40px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="personal-table-body">
-                                        <!-- rows added here -->
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="2" class="total-label">합계</td>
-                                            <td class="total-amount" id="personal-total">0원</td>
-                                            <td></td>
-                                        </tr>
-                                        <tr class="remaining-row">
-                                            <td colspan="2" class="total-label">남은 금액</td>
-                                            <td class="remaining-amount" id="personal-remaining">0원</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                    <div class="detail-card">
+                        <!-- 연월 네비게이터 -->
+                        <div class="detail-month-nav">
+                            <button id="detail-prev-month" class="month-nav-btn">&#8249;</button>
+                            <span id="detail-month-label" class="month-nav-label">2026년 02월</span>
+                            <button id="detail-next-month" class="month-nav-btn">&#8250;</button>
                         </div>
 
-                        <div class="section-card">
-                            <div class="section-header">
-                                <div class="title-with-budget">
-                                    <h4>공용소비</h4>
-                                    <div class="budget-input-group">
-                                        <label>목표예산:</label>
-                                        <input type="number" id="shared-budget" placeholder="0">
-                                        <span>원</span>
+                        <div class="detail-grid">
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <div class="title-with-budget">
+                                        <h4>개인소비</h4>
+                                        <div class="budget-input-group">
+                                            <label>목표예산:</label>
+                                            <input type="number" id="personal-budget" placeholder="0">
+                                            <span>원</span>
+                                        </div>
                                     </div>
+                                    <button class="add-btn" id="add-personal-row">+</button>
                                 </div>
-                                <button class="add-btn" id="add-shared-row">+</button>
+                                <div class="table-responsive">
+                                    <table class="detail-table" id="personal-detail-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">No.</th>
+                                                <th>내용</th>
+                                                <th>금액</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="personal-table-body">
+                                            <!-- rows added here -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="total-label">합계</td>
+                                                <td class="total-amount" id="personal-total">0원</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="remaining-row">
+                                                <td colspan="2" class="total-label">남은 금액</td>
+                                                <td class="remaining-amount" id="personal-remaining">0원</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
                             </div>
-                            <div class="table-responsive">
-                                <table class="detail-table" id="shared-detail-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px;">No.</th>
-                                            <th>내용</th>
-                                            <th>금액</th>
-                                            <th style="width: 40px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="shared-table-body">
-                                        <!-- rows added here -->
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colspan="2" class="total-label">합계</td>
-                                            <td class="total-amount" id="shared-total">0원</td>
-                                            <td></td>
-                                        </tr>
-                                        <tr class="remaining-row">
-                                            <td colspan="2" class="total-label">남은 금액</td>
-                                            <td class="remaining-amount" id="shared-remaining">0원</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
 
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <div class="title-with-budget">
+                                        <h4>공용소비</h4>
+                                        <div class="budget-input-group">
+                                            <label>목표예산:</label>
+                                            <input type="number" id="shared-budget" placeholder="0">
+                                            <span>원</span>
+                                        </div>
+                                    </div>
+                                    <button class="add-btn" id="add-shared-row">+</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="detail-table" id="shared-detail-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">No.</th>
+                                                <th>내용</th>
+                                                <th>금액</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="shared-table-body">
+                                            <!-- rows added here -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="total-label">합계</td>
+                                                <td class="total-amount" id="shared-total">0원</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr class="remaining-row">
+                                                <td colspan="2" class="total-label">남은 금액</td>
+                                                <td class="remaining-amount" id="shared-remaining">0원</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div><!-- end detail-grid -->
+                    </div><!-- end detail-card -->
 
                 </section>
                 <!-- Total Statistics Tab -->

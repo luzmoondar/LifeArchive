@@ -22,34 +22,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         issues: [],
         viewDates: {
             account: new Date().toISOString().slice(0, 7),
-            life: new Date().toISOString().slice(0, 7)
+            life: new Date().toISOString().slice(0, 7),
+            detail: new Date().toISOString().slice(0, 7)
         },
-        detailData: {
-            personal: [],
-            shared: [],
-            budgets: {
-                personal: 0,
-                shared: 0
-            }
-        }
+        detailData: {} // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
     };
 
     // 로컬 데이터 먼저 불러오기
     const localData = localStorage.getItem('life-state');
     if (localData) {
         const parsed = JSON.parse(localData);
-        state = {
-            ...state,
-            ...parsed,
-            detailData: {
-                ...state.detailData,
-                ...(parsed.detailData || {})
-            }
-        };
-        // 앱 실행 시 항상 현재 날짜로 초기화하여 가계부/먼슬리가 이번 달을 보여주게 함
+        // 구버전 detailData (personal:[], shared:[]) 형식을 새 형식으로 마이그레이션
+        let migratedDetail = parsed.detailData || {};
+        if (Array.isArray(migratedDetail.personal)) {
+            const today = new Date().toISOString().slice(0, 7);
+            migratedDetail = {
+                [today]: {
+                    personal: migratedDetail.personal,
+                    shared: migratedDetail.shared || [],
+                    budgets: migratedDetail.budgets || { personal: 0, shared: 0 }
+                }
+            };
+        }
+        state = { ...state, ...parsed, detailData: migratedDetail };
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
-            life: new Date().toISOString().slice(0, 7)
+            life: new Date().toISOString().slice(0, 7),
+            detail: parsed.viewDates?.detail || new Date().toISOString().slice(0, 7)
         };
     }
 
@@ -839,28 +838,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Detailed Account Tab Logic ---
+
+    // 현재 선택된 달의 detailData 가져오기 (없으면 초기화)
+    function getDetailMonth() {
+        const key = state.viewDates.detail;
+        if (!state.detailData[key]) {
+            state.detailData[key] = {
+                personal: [],
+                shared: [],
+                budgets: { personal: 0, shared: 0 }
+            };
+        }
+        // 하위 속성이 없을 경우 보완
+        const d = state.detailData[key];
+        if (!d.personal) d.personal = [];
+        if (!d.shared) d.shared = [];
+        if (!d.budgets) d.budgets = { personal: 0, shared: 0 };
+        return d;
+    }
+
+    function renderDetailMonthNav() {
+        const key = state.viewDates.detail; // 'YYYY-MM'
+        const [y, m] = key.split('-').map(Number);
+        const label = document.getElementById('detail-month-label');
+        if (label) label.textContent = `${y}년 ${String(m).padStart(2, '0')}월`;
+    }
+
     function renderDetailTables() {
+        renderDetailMonthNav();
         renderDetailTable('personal', 'personal-table-body');
         renderDetailTable('shared', 'shared-table-body');
         syncBudgetInputs();
     }
 
     function syncBudgetInputs() {
+        const monthData = getDetailMonth();
         const pBudgetInput = document.getElementById('personal-budget');
         const sBudgetInput = document.getElementById('shared-budget');
         if (pBudgetInput) {
-            pBudgetInput.value = state.detailData.budgets.personal || '';
+            pBudgetInput.value = monthData.budgets.personal || '';
             pBudgetInput.oninput = (e) => {
-                state.detailData.budgets.personal = parseInt(e.target.value) || 0;
-                updateDetailTotals('personal'); // 예산 변동 시 남은 금액 갱신
+                getDetailMonth().budgets.personal = parseInt(e.target.value) || 0;
+                updateDetailTotals('personal');
                 saveToLocal();
             };
         }
         if (sBudgetInput) {
-            sBudgetInput.value = state.detailData.budgets.shared || '';
+            sBudgetInput.value = monthData.budgets.shared || '';
             sBudgetInput.oninput = (e) => {
-                state.detailData.budgets.shared = parseInt(e.target.value) || 0;
-                updateDetailTotals('shared'); // 예산 변동 시 남은 금액 갱신
+                getDetailMonth().budgets.shared = parseInt(e.target.value) || 0;
+                updateDetailTotals('shared');
                 saveToLocal();
             };
         }
@@ -871,12 +898,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!body) return;
         body.innerHTML = '';
 
-        if (!state.detailData) state.detailData = { personal: [], shared: [], budgets: { personal: 0, shared: 0 } };
-        if (!state.detailData[type]) state.detailData[type] = [];
-        const data = state.detailData[type];
+        const monthData = getDetailMonth();
+        const data = monthData[type];
 
         let stateChanged = false;
-        // 데이터가 20개 미만이면 20개가 될 때까지 빈 칸 추가 (아이디 겹치지 않게 유의)
         while (data.length < 20) {
             data.push({ id: 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), title: '', amount: 0 });
             stateChanged = true;
@@ -908,7 +933,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             removeBtn.onclick = () => {
-                state.detailData[type].splice(index, 1);
+                getDetailMonth()[type].splice(index, 1);
                 saveState();
                 renderDetailTables();
             };
@@ -920,17 +945,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateDetailTotals(type) {
-        const total = state.detailData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
+        const monthData = getDetailMonth();
+        const total = monthData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
         const totalEl = document.getElementById(`${type}-total`);
         if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
 
-        // 남은 금액 계산 (예산 - 합계)
-        const budget = state.detailData.budgets[type] || 0;
+        const budget = monthData.budgets[type] || 0;
         const remaining = budget - total;
         const remainingEl = document.getElementById(`${type}-remaining`);
         if (remainingEl) {
             remainingEl.textContent = `${remaining.toLocaleString()}원`;
-            // 남은 금액이 음수(예산 초과)면 빨간색으로 표시
             remainingEl.style.color = remaining < 0 ? '#ef4444' : '#2b8a3e';
         }
     }
@@ -938,14 +962,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     document.getElementById('add-personal-row').onclick = () => {
-        state.detailData.personal.push({ id: crypto.randomUUID(), title: '', amount: 0 });
+        getDetailMonth().personal.push({ id: crypto.randomUUID(), title: '', amount: 0 });
         saveState();
         renderDetailTables();
     };
 
     document.getElementById('add-shared-row').onclick = () => {
-        state.detailData.shared.push({ id: crypto.randomUUID(), title: '', amount: 0 });
+        getDetailMonth().shared.push({ id: crypto.randomUUID(), title: '', amount: 0 });
         saveState();
+        renderDetailTables();
+    };
+
+    // 연월 이전/다음 버튼
+    document.getElementById('detail-prev-month').onclick = () => {
+        const [y, m] = state.viewDates.detail.split('-').map(Number);
+        const d = new Date(y, m - 2); // m-1 is current month (0-indexed), m-2 is prev
+        state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        saveToLocal();
+        renderDetailTables();
+    };
+
+    document.getElementById('detail-next-month').onclick = () => {
+        const [y, m] = state.viewDates.detail.split('-').map(Number);
+        const d = new Date(y, m); // m is next month (0-indexed)
+        state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        saveToLocal();
         renderDetailTables();
     };
 
