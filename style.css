@@ -1137,6 +1137,70 @@ body {
     }
 }
 
+/* Stock Table Styles */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border);
+}
+
+.stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    background: white;
+}
+
+.stock-table th {
+    background: #f8fafc;
+    color: var(--text-light);
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+}
+
+.stock-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.stock-table tr:last-child td {
+    border-bottom: none;
+}
+
+.stock-table tr:hover {
+    background: #f1f5f9;
+}
+
+.stock-table .delete-stock-btn {
+    background: #fee2e2;
+    color: var(--danger);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.stock-table .delete-stock-btn:hover {
+    background: #fecaca;
+}
+
+@media (max-width: 600px) {
+
+    .stock-table th,
+    .stock-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
 /* PC 및 모바일 공통: 하단 바 숨김 */
 .mobile-bottom-nav {
     display: none !important;

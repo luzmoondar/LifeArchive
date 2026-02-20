@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         refreshCalendars();
         renderCategoryGrids();
         renderIssues();
+        renderStockList();
         updateStats();
     }
 
@@ -447,6 +448,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
     }
 
+    function renderStockList() {
+        const listBody = document.getElementById('stock-list-body');
+        if (!listBody) return;
+        listBody.innerHTML = '';
+
+        // inStock이 true인 항목들만 필터링 (날짜순 정렬)
+        const stockItems = state.logs
+            .filter(log => log.inStock)
+            .sort((a, b) => b.date.localeCompare(a.date));
+
+        if (stockItems.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-light); padding:2rem;">보유중인 품목이 없습니다.</td></tr>';
+            return;
+        }
+
+        stockItems.forEach(item => {
+            const tr = document.createElement('tr');
+            // 날짜 포맷 (MM-DD)
+            const dateStr = item.date.slice(5);
+            tr.innerHTML = `
+                <td>${dateStr}</td>
+                <td style="font-weight:600;">${item.item}</td>
+                <td>${item.qty}</td>
+                <td>${parseInt(item.amount || 0).toLocaleString()}원</td>
+                <td><button class="delete-stock-btn">삭제</button></td>
+            `;
+
+            tr.querySelector('.delete-stock-btn').onclick = () => {
+                if (confirm('보유목록에서 이 항목을 삭제하시겠습니까?\n(달력 기록은 유지됩니다.)')) {
+                    const target = state.logs.find(l => l.id === item.id);
+                    if (target) {
+                        target.inStock = false;
+                        saveState();
+                        renderStockList();
+                    }
+                }
+            };
+            listBody.appendChild(tr);
+        });
+    }
+
     document.getElementById('add-issue').onclick = () => {
         const text = document.getElementById('new-issue').value;
         const day = document.getElementById('new-issue-day').value;
@@ -469,12 +511,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (day && i && q) {
             const date = `${state.viewDates.life}-${String(day).padStart(2, '0')}`;
-            state.logs.push({ id: Date.now(), date: date, item: i, qty: q, amount: a || 0 });
+            state.logs.push({ id: Date.now(), date: date, item: i, qty: q, amount: a || 0, inStock: true });
             document.getElementById('life-day').value = '';
             document.getElementById('life-item').value = '';
             document.getElementById('life-qty').value = '';
             document.getElementById('life-amount').value = '';
-            saveState(); refreshCalendars(); alert('기록되었습니다!');
+            saveState(); refreshCalendars(); renderStockList(); alert('기록되었습니다!');
         } else if (!day) {
             alert('날짜(일)를 입력해주세요.');
         }
