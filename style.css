@@ -1049,18 +1049,18 @@ body {
 }
 
 .label-income {
-    background: #e9e9f5;
-    color: #6366f1;
+    background: #e4f9fc;
+    color: #005ed8;
 }
 
 .label-expense {
-    background: #f7ebeb;
-    color: #ef4444;
+    background: #fde8e9;
+    color: #e01b24;
 }
 
 .label-savings {
-    background: #e6f2ee;
-    color: #10b981;
+    background: #e8fdeb;
+    color: #20c638;
 }
 
 .label-issue {
