@@ -311,7 +311,6 @@ body {
     background: white;
     padding: 1.5rem;
     border-radius: 1.5rem;
-    border: 1px solid var(--border);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
     width: 100%;
 }
@@ -1512,6 +1511,62 @@ body {
 
 .remove-row-btn:hover {
     color: var(--danger);
+}
+
+/* 고정 기능 스타일 */
+.row-action-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+
+.pin-row-btn {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: all 0.15s;
+    opacity: 0;
+    /* 기본적으로 숨김, 호버시 표시 */
+}
+
+tr:hover .pin-row-btn {
+    opacity: 1;
+}
+
+.pin-row-btn:hover {
+    background: #f0f4ff;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.pin-row-btn.pinned {
+    opacity: 1;
+    /* 고정된 항목은 항상 표시 */
+    background: #eef2ff;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.pinned-row {
+    background: #fafbff !important;
+}
+
+.pinned-row td {
+    border-bottom: none !important;
+}
+
+.pinned-separator td {
+    height: 4px;
+    background: linear-gradient(to right, #e0e7ff, transparent, #e0e7ff);
+    padding: 0;
+    border: none !important;
 }
 
 @media (max-width: 768px) {

@@ -25,7 +25,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             life: new Date().toISOString().slice(0, 7),
             detail: new Date().toISOString().slice(0, 7)
         },
-        detailData: {} // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
+        detailData: {}, // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
+        pinnedItems: { personal: [], shared: [] } // 모든 달에 상단 고정되는 항목
     };
 
     // 로컬 데이터 먼저 불러오기
@@ -45,6 +46,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
         }
         state = { ...state, ...parsed, detailData: migratedDetail };
+        state.pinnedItems = {
+            personal: parsed.pinnedItems?.personal || [],
+            shared: parsed.pinnedItems?.shared || []
+        };
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
             life: new Date().toISOString().slice(0, 7),
@@ -898,6 +903,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!body) return;
         body.innerHTML = '';
 
+        if (!state.pinnedItems) state.pinnedItems = { personal: [], shared: [] };
+        if (!state.pinnedItems[type]) state.pinnedItems[type] = [];
+        const pinned = state.pinnedItems[type];
+
         const monthData = getDetailMonth();
         const data = monthData[type];
 
@@ -908,17 +917,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (stateChanged) saveToLocal();
 
-        data.forEach((item, index) => {
+        // 헬퍼: 행 DOM 생성
+        function makeRow(item, index, isPinned) {
             const tr = document.createElement('tr');
+            if (isPinned) tr.classList.add('pinned-row');
+
             tr.innerHTML = `
-                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
-                <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"></td>
+                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${isPinned ? '📌' : index + 1}</td>
+                <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"${isPinned ? '' : ''}></td>
                 <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
-                <td><button class="remove-row-btn" title="삭제">&times;</button></td>
+                <td class="row-action-cell">
+                    <button class="pin-row-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? '고정 해제' : '고정'}">${isPinned ? '📌해제' : '📌고정'}</button>
+                    <button class="remove-row-btn" title="삭제">✕</button>
+                </td>
             `;
 
             const titleInput = tr.querySelector('.detail-title');
             const amountInput = tr.querySelector('.detail-amount');
+            const pinBtn = tr.querySelector('.pin-row-btn');
             const removeBtn = tr.querySelector('.remove-row-btn');
 
             titleInput.oninput = (e) => {
@@ -932,21 +948,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                 saveToLocal();
             };
 
-            removeBtn.onclick = () => {
-                getDetailMonth()[type].splice(index, 1);
+            pinBtn.onclick = () => {
+                if (isPinned) {
+                    // 고정 해제: pinnedItems에서 제거
+                    state.pinnedItems[type] = state.pinnedItems[type].filter(p => p.id !== item.id);
+                } else {
+                    // 고정: pinnedItems에 추가 후 일반 목록에서 제거
+                    state.pinnedItems[type].push({ ...item });
+                    getDetailMonth()[type] = getDetailMonth()[type].filter(r => r.id !== item.id);
+                }
                 saveState();
                 renderDetailTables();
             };
 
-            body.appendChild(tr);
+            removeBtn.onclick = () => {
+                if (isPinned) {
+                    state.pinnedItems[type] = state.pinnedItems[type].filter(p => p.id !== item.id);
+                } else {
+                    getDetailMonth()[type] = getDetailMonth()[type].filter(r => r.id !== item.id);
+                }
+                saveState();
+                renderDetailTables();
+            };
+
+            return tr;
+        }
+
+        // 1. 고정 항목 먼저 렌더링
+        pinned.forEach((item) => {
+            body.appendChild(makeRow(item, 0, true));
+        });
+
+        // 구분선 (고정 항목이 있을 때만)
+        if (pinned.length > 0) {
+            const sep = document.createElement('tr');
+            sep.innerHTML = `<td colspan="4" class="pinned-separator"></td>`;
+            body.appendChild(sep);
+        }
+
+        // 2. 일반 항목 렌더링
+        data.forEach((item, index) => {
+            body.appendChild(makeRow(item, index, false));
         });
 
         updateDetailTotals(type);
     }
 
     function updateDetailTotals(type) {
+        if (!state.pinnedItems) state.pinnedItems = { personal: [], shared: [] };
         const monthData = getDetailMonth();
-        const total = monthData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
+        const pinnedTotal = (state.pinnedItems[type] || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+        const regularTotal = monthData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
+        const total = pinnedTotal + regularTotal;
         const totalEl = document.getElementById(`${type}-total`);
         if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
 
