@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Issues Rendering
                 const dayIssues = state.issues.filter(i => i.date === fullDate);
                 dayIssues.forEach(issue => {
-                    contentDiv.innerHTML += `<div class="day-label label-issue ${issue.checked ? 'checked' : ''}">${issue.checked ? '✓' : ''} ${issue.text}</div>`;
+                    contentDiv.innerHTML += `<div class="day-label label-issue ${issue.checked ? 'checked' : ''}">${issue.text}</div>`;
                 });
 
                 // Life Logs Rendering
@@ -806,6 +806,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             pBudgetInput.value = state.detailData.budgets.personal || '';
             pBudgetInput.oninput = (e) => {
                 state.detailData.budgets.personal = parseInt(e.target.value) || 0;
+                updateDetailTotals('personal'); // 예산 변동 시 남은 금액 갱신
                 saveToLocal();
             };
         }
@@ -813,6 +814,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             sBudgetInput.value = state.detailData.budgets.shared || '';
             sBudgetInput.oninput = (e) => {
                 state.detailData.budgets.shared = parseInt(e.target.value) || 0;
+                updateDetailTotals('shared'); // 예산 변동 시 남은 금액 갱신
                 saveToLocal();
             };
         }
@@ -870,15 +872,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         const total = state.detailData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
         const totalEl = document.getElementById(`${type}-total`);
         if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
+
+        // 남은 금액 계산 (예산 - 합계)
+        const budget = state.detailData.budgets[type] || 0;
+        const remaining = budget - total;
+        const remainingEl = document.getElementById(`${type}-remaining`);
+        if (remainingEl) {
+            remainingEl.textContent = `${remaining.toLocaleString()}원`;
+            // 남은 금액이 음수(예산 초과)면 빨간색으로 표시
+            remainingEl.style.color = remaining < 0 ? '#ef4444' : '#2b8a3e';
+        }
+
         updateOverallTotal();
     }
 
     function updateOverallTotal() {
         const pTotal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
         const sTotal = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const overall = pTotal + sTotal;
-        const overallEl = document.getElementById('overall-detail-total');
-        if (overallEl) overallEl.textContent = `${overall.toLocaleString()}원`;
+
+        const pOverallEl = document.getElementById('personal-overall-total');
+        const sOverallEl = document.getElementById('shared-overall-total');
+
+        if (pOverallEl) pOverallEl.textContent = `${pTotal.toLocaleString()}원`;
+        if (sOverallEl) sOverallEl.textContent = `${sTotal.toLocaleString()}원`;
     }
 
     document.getElementById('add-personal-row').onclick = () => {

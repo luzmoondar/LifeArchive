@@ -577,11 +577,7 @@ body {
     gap: 0.5rem;
 }
 
-.label-issue {
-    background: #eff6ff;
-    color: #1e40af;
-    border-left: 2px solid #3b82f6;
-}
+
 
 .detailed-issue-item {
     background: #f0f7ff;
@@ -1382,21 +1378,57 @@ body {
     background: #f8fafc;
 }
 
-.total-card {
-    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%) !important;
-    color: white;
+.detail-table .remaining-row td {
+    border-top: 2px solid #e2e8f0;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
 
-.total-row {
+.remaining-amount {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.detail-summary-card {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    font-size: 1.2rem;
-    font-weight: 700;
+    padding: 1.5rem !important;
 }
 
-#overall-detail-total {
-    font-size: 1.5rem;
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.summary-item span:first-child {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.summary-item span:last-child {
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.summary-divider {
+    width: 2px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .detail-summary-card {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .summary-divider {
+        width: 80%;
+        height: 1px;
+    }
 }
 
 .remove-row-btn {

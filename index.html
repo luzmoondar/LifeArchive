@@ -64,6 +64,11 @@
                                         <td class="total-amount" id="personal-total">0원</td>
                                         <td></td>
                                     </tr>
+                                    <tr class="remaining-row">
+                                        <td class="total-label">남은 금액</td>
+                                        <td class="remaining-amount" id="personal-remaining">0원</td>
+                                        <td></td>
+                                    </tr>
                                 </tfoot>
                             </table>
                         </div>
@@ -99,16 +104,26 @@
                                         <td class="total-amount" id="shared-total">0원</td>
                                         <td></td>
                                     </tr>
+                                    <tr class="remaining-row">
+                                        <td class="total-label">남은 금액</td>
+                                        <td class="remaining-amount" id="shared-remaining">0원</td>
+                                        <td></td>
+                                    </tr>
                                 </tfoot>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <div class="section-card mt-4 total-card">
-                    <div class="total-row">
-                        <span>전체 총 합계:</span>
-                        <span id="overall-detail-total">0원</span>
+                <div class="section-card mt-4 total-card detail-summary-card">
+                    <div class="summary-item">
+                        <span>개인소비 합계:</span>
+                        <span id="personal-overall-total">0원</span>
+                    </div>
+                    <div class="summary-divider"></div>
+                    <div class="summary-item">
+                        <span>공용소비 합계:</span>
+                        <span id="shared-overall-total">0원</span>
                     </div>
                 </div>
             </section>
