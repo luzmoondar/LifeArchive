@@ -155,29 +155,33 @@ body {
     margin-bottom: 0.5rem;
 }
 
+.summary-card.income {
+    background-color: #f2f2fc;
+}
+
+.summary-card.expense {
+    background-color: #fff2f2;
+}
+
+.summary-card.savings,
+.summary-card.asset {
+    background-color: #ebf5f1;
+}
+
 .summary-card .amount {
     font-size: 1.8rem;
     font-weight: 700;
+    color: #1e293b;
+    /* 모든 금액 텍스트 컬러 통일 */
 }
 
-.income .amount {
-    color: var(--primary);
-}
-
-.expense .amount {
-    color: var(--danger);
-}
-
-.savings .amount {
-    color: var(--success);
-}
-
-.balance .amount {
-    color: var(--text);
-}
-
+/* 기존 개별 컬러 지정 제거 */
+.income .amount,
+.expense .amount,
+.savings .amount,
+.balance .amount,
 .asset .amount {
-    color: #ff7d0c;
+    color: #1e293b;
 }
 
 .income-text {
@@ -1047,10 +1051,8 @@ body {
 }
 
 .label-expense {
-    background: #fff0f6;
-    /* 연분홍 배경 */
-    color: #d6336c;
-    /* 진한 핑크 텍스트 */
+    background: #f7ebeb;
+    color: #ef4444;
 }
 
 .label-savings {
