@@ -978,13 +978,17 @@ body {
 }
 
 .label-expense {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: #fff0f6;
+    /* 연분홍 배경 */
+    color: #d6336c;
+    /* 진한 핑크 텍스트 */
 }
 
 .label-savings {
-    background: #e0f2fe;
-    color: #0369a1;
+    background: #ebfbee;
+    /* 연녹색 배경 */
+    color: #2b8a3e;
+    /* 진한 초록 텍스트 */
 }
 
 .label-issue {
