@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const localData = localStorage.getItem('life-state');
     if (localData) {
         state = JSON.parse(localData);
+        // 앱 실행 시 항상 현재 날짜로 초기화하여 가계부/먼슬리가 이번 달을 보여주게 함
+        state.viewDates = {
+            account: new Date().toISOString().slice(0, 7),
+            life: new Date().toISOString().slice(0, 7)
+        };
     }
 
     // Supabase에서 데이터 불러오기

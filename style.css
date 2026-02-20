@@ -900,9 +900,13 @@ body {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: auto repeat(6, 1fr);
+    /* 요일 헤더 제외 6줄 균등 배분 */
     flex: 1;
     /* 남은 공간을 모두 차지 */
     text-align: center;
+    min-height: 0;
+    /* flex 자식으로서의 안정적인 높이 계산 */
 }
 
 .calendar-day-head {
@@ -917,7 +921,8 @@ body {
     cursor: pointer;
     position: relative;
     transition: background 0.2s;
-    min-height: 100px;
+    height: 100%;
+    /* 부모 그리드 칸을 꽉 채움 */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
