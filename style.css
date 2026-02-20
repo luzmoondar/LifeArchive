@@ -945,6 +945,10 @@ body {
     flex-direction: column;
     align-items: flex-start;
     border: 1px solid #f1f5f9;
+    min-width: 0;
+    /* 내용이 길어도 칸이 늘어나지 않도록 방지 */
+    overflow: hidden;
+    /* 영역 밖으로 나가는 내용 숨김 */
 }
 
 .day-content {
@@ -953,6 +957,8 @@ body {
     flex-direction: column;
     gap: 2px;
     margin-top: 4px;
+    overflow: hidden;
+    /* 너무 많은 항목이 있을 경우 칸을 뚫고 나가지 않도록 함 */
 }
 
 .day-label {
