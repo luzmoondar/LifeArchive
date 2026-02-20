@@ -35,8 +35,31 @@ body {
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 2rem;
-    padding: 2rem;
+    padding: 0;
+    /* 패딩 제거 (내부 요소에서 처리) */
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    /* 헤더의 배경색이 둥근 모서리를 넘지 않도록 */
+}
+
+.app-title-bar {
+    background: var(--primary);
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.app-title-bar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.app-body {
+    padding: 2rem;
+    /* 본문 영역 패딩 추가 */
 }
 
 .main-header {

@@ -231,35 +231,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             value: state.transactions.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
 
-        const pinkColors = [
-            '#fbcfe8', // pink-200
-            '#f9a8d4', // pink-300
-            '#f472b6', // pink-400
-            '#fda4af', // rose-300
-            '#fb7185', // rose-400
-            '#fce7f3', // pink-100
-            '#ffe4e6', // rose-100
-            '#ec4899'  // pink-500 (point)
+        const medianCutColors = [
+            '#644ca2', // Purple
+            '#3e77e9', // Blue
+            '#ff5952', // Red/Coral
+            '#4fc775', // Green
+            '#ffd656', // Yellow
+            '#8b5cf6', // Extended: Light Purple
+            '#3b82f6', // Extended: Light Blue
+            '#ef4444'  // Extended: Light Red
         ];
 
-        const greenColors = [
-            '#bbf7d0', // green-200
-            '#86efac', // green-300
-            '#4ade80', // green-400
-            '#a7f3d0', // emerald-200
-            '#6ee7b7', // emerald-300
-            '#dcfce7', // green-100
-            '#d1fae5', // emerald-100
-            '#34d399'  // emerald-400 (point)
-        ];
-
-        const chartConfig = (labels, dataValues, colors) => ({
+        const chartConfig = (labels, dataValues) => ({
             type: 'doughnut',
             data: {
                 labels: labels,
                 datasets: [{
                     data: dataValues,
-                    backgroundColor: colors,
+                    backgroundColor: medianCutColors,
                     borderWidth: 0
                 }]
             },
@@ -289,7 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (expenseChart) expenseChart.destroy();
             const labels = formatLabels(expenseData, totalExpense);
             const values = expenseData.map(d => totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0);
-            expenseChart = new Chart(exCtx, chartConfig(labels, values, pinkColors));
+            expenseChart = new Chart(exCtx, chartConfig(labels, values));
         }
 
         const svCtx = getCtx('savings-chart');
@@ -297,7 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (savingsChart) savingsChart.destroy();
             const labels = formatLabels(savingsData, totalSavings);
             const values = savingsData.map(d => totalSavings > 0 ? Math.round((d.value / totalSavings) * 100) : 0);
-            savingsChart = new Chart(svCtx, chartConfig(labels, values, greenColors));
+            savingsChart = new Chart(svCtx, chartConfig(labels, values));
         }
     }
 
