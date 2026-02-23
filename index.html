@@ -289,63 +289,66 @@
 
                 <!-- Wedding Gift Tab -->
                 <section id="wedding" class="tab-content">
-                    <div class="wedding-top-summary section-card mb-4" style="margin-bottom: 1.5rem;">
-                        <div class="title-with-summary"
-                            style="display: flex; align-items: center; justify-content: space-between;">
-                            <h4 style="margin:0;">축의금 전체 요약</h4>
-                            <div class="wedding-summary">
-                                <span>받은 총액: <strong id="wedding-received-total"
-                                        style="color: var(--primary);">0원</strong></span>
-                                <span>내가 낸 총액: <strong id="wedding-paid-total"
-                                        style="color: var(--danger);">0원</strong></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="detail-grid">
-                        <!-- Left Table (1-20) -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>축의금 내역 (1-20)</h4>
-                                <button class="add-btn" id="add-wedding-row-1">+</button>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="detail-table wedding-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px;">No.</th>
-                                            <th>이름</th>
-                                            <th>받은 금액</th>
-                                            <th>낸 금액</th>
-                                            <th style="width: 45px;">참석</th>
-                                            <th style="width: 35px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="wedding-table-body-1"></tbody>
-                                </table>
+                    <div class="detail-card">
+                        <div class="wedding-top-summary"
+                            style="padding: 1.5rem 2rem; background: #f7f7ff; border-bottom: 1px solid var(--border);">
+                            <div class="title-with-summary"
+                                style="display: flex; align-items: center; justify-content: space-between;">
+                                <h4 style="margin:0;">축의금 전체 요약</h4>
+                                <div class="wedding-summary">
+                                    <span>받은 총액: <strong id="wedding-received-total"
+                                            style="color: var(--primary);">0원</strong></span>
+                                    <span>내가 낸 총액: <strong id="wedding-paid-total"
+                                            style="color: var(--danger);">0원</strong></span>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Right Table (21-40) -->
-                        <div class="section-card">
-                            <div class="section-header">
-                                <h4>축의금 내역 (21-40)</h4>
-                                <button class="add-btn" id="add-wedding-row-2">+</button>
+                        <div class="detail-grid">
+                            <!-- Left Table (1-20) -->
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <h4>축의금 내역 (1-20)</h4>
+                                    <button class="add-btn" id="add-wedding-row-1">+</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="detail-table wedding-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">No.</th>
+                                                <th>이름</th>
+                                                <th>받은 금액</th>
+                                                <th>낸 금액</th>
+                                                <th style="width: 45px;">참석</th>
+                                                <th style="width: 35px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="wedding-table-body-1"></tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div class="table-responsive">
-                                <table class="detail-table wedding-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40px;">No.</th>
-                                            <th>이름</th>
-                                            <th>받은 금액</th>
-                                            <th>낸 금액</th>
-                                            <th style="width: 45px;">참석</th>
-                                            <th style="width: 35px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="wedding-table-body-2"></tbody>
-                                </table>
+
+                            <!-- Right Table (21-40) -->
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <h4>축의금 내역 (21-40)</h4>
+                                    <button class="add-btn" id="add-wedding-row-2">+</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="detail-table wedding-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">No.</th>
+                                                <th>이름</th>
+                                                <th>받은 금액</th>
+                                                <th>낸 금액</th>
+                                                <th style="width: 45px;">참석</th>
+                                                <th style="width: 35px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="wedding-table-body-2"></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
