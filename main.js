@@ -952,7 +952,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"${isPinned ? '' : ''}></td>
                 <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
                 <td class="row-action-cell">
-                    <button class="pin-row-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? '고정 해제' : '고정'}">${isPinned ? '📌해제' : '📌고정'}</button>
+                    <button class="pin-row-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? '고정 해제' : '고정'}">${isPinned ? '📌' : '📌'}</button>
                     <button class="remove-row-btn" title="삭제">✕</button>
                 </td>
             `;
@@ -1073,11 +1073,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Wedding Gift Tab Logic ---
     function renderWeddingTable() {
-        const body1 = document.getElementById('wedding-table-body-1');
-        const body2 = document.getElementById('wedding-table-body-2');
-        if (!body1 || !body2) return;
-        body1.innerHTML = '';
-        body2.innerHTML = '';
+        const body = document.getElementById('wedding-table-body');
+        if (!body) return;
+        body.innerHTML = '';
 
         // 최소 40개 데이터 보장
         let stateChanged = false;
@@ -1121,8 +1119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return tr;
         }
 
-        data.slice(0, 20).forEach((item, i) => body1.appendChild(createWeddingRow(item, i)));
-        data.slice(20).forEach((item, i) => body2.appendChild(createWeddingRow(item, i + 20)));
+        data.forEach((item, i) => body.appendChild(createWeddingRow(item, i)));
         updateWeddingTotals();
     }
 
@@ -1136,16 +1133,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (elPaid) elPaid.textContent = `${totalPaid.toLocaleString()}원`;
     }
 
-    if (document.getElementById('add-wedding-row-1')) {
-        document.getElementById('add-wedding-row-1').onclick = () => {
-            state.weddingData.splice(20, 0, { id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
-            saveState(); renderWeddingTable();
-        };
-    }
-    if (document.getElementById('add-wedding-row-2')) {
-        document.getElementById('add-wedding-row-2').onclick = () => {
+    if (document.getElementById('add-wedding-row')) {
+        document.getElementById('add-wedding-row').onclick = () => {
             state.weddingData.push({ id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
-            saveState(); renderWeddingTable();
+            saveState();
+            renderWeddingTable();
         };
     }
 
