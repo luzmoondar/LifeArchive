@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 상세가계부 합계 계산 (모든 달 합산 - 전체통계용)
         let totalDetailPersonal = 0;
         let totalDetailShared = 0;
-        
+
         // 고정 항목(pinnedItems)은 모든 달에 공통으로 적용되므로, 데이터가 있는 각 달마다 합산해줍니다.
         const pinnedPersonalTotal = (state.pinnedItems?.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0);
         const pinnedSharedTotal = (state.pinnedItems?.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0);
