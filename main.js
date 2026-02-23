@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
             life: new Date().toISOString().slice(0, 7),
-            detail: parsed.viewDates?.detail || new Date().toISOString().slice(0, 7)
+            detail: new Date().toISOString().slice(0, 7)
         };
     }
 
@@ -80,6 +80,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     detailData: {
                         ...state.detailData,
                         ...(cloudData.detailData || {})
+                    },
+                    viewDates: {
+                        account: new Date().toISOString().slice(0, 7),
+                        life: new Date().toISOString().slice(0, 7),
+                        detail: new Date().toISOString().slice(0, 7)
                     }
                 };
                 saveToLocal();
