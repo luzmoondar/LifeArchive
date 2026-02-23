@@ -18,6 +18,19 @@
     box-sizing: border-box;
 }
 
+/* Chrome, Safari, Edge, Opera: 숫자 입력칸 화살표 제거 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox: 숫자 입력칸 화살표 제거 */
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 body {
     font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
     background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
