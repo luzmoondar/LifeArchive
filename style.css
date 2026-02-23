@@ -1656,19 +1656,44 @@ tr:hover .pin-row-btn {
 .wedding-table input[type="text"],
 .wedding-table input[type="number"] {
     width: 100%;
-    padding: 0.5rem 0.6rem;
+    padding: 0.4rem 0.6rem;
+    /* 패딩 소폭 축소 및 균형 조정 */
     border: 1px solid transparent;
     border-radius: 0.5rem;
     background: transparent;
     font-family: inherit;
     font-size: 0.95rem;
     transition: all 0.2s;
-    line-height: 1.2;
+    line-height: 1.5;
+    /* 줄 높이 표준화 */
     display: block;
+    margin: 0;
 }
 
 .wedding-table td {
     vertical-align: middle;
+    padding: 0.4rem 0.2rem;
+    /* 셀 패딩 균일화 */
+}
+
+/* 요약 영역 정렬 개선 */
+.wedding-summary {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.wedding-summary span {
+    display: flex;
+    align-items: baseline;
+    /* 바닥 글자 라인을 일치시킴 */
+    gap: 0.5rem;
+}
+
+.wedding-summary strong {
+    font-size: 1.15rem;
+    /* 강조 숫자 크기 살짝 키움 */
+    font-weight: 700;
+    line-height: 1;
 }
 
 /* 참석 체크박스 중앙 정렬 강화 */
@@ -1676,20 +1701,8 @@ tr:hover .pin-row-btn {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
-    min-height: 40px;
-}
-
-.wedding-table input[type="checkbox"] {
-    margin: 0;
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-}
-
-.wedding-summary strong {
-    font-size: 1.1rem;
-    vertical-align: middle;
+    height: 1.5rem;
+    /* 명확한 높이 지정 */
 }
 
 .wedding-table .remove-row-btn {
