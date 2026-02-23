@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         header.className = 'calendar-header';
         header.innerHTML = `
             <h3>${year}년 ${month}월 <button class="date-picker-btn">📅</button><input type="month" class="hidden-date-input" value="${state.viewDates[type]}"></h3>
-            <div class="nav-controls"><button class="nav-btn prev-btn">&lt;</button><button class="nav-btn next-btn">&gt;</button></div>
+            <div class="nav-controls"><button class="nav-btn prev-btn">&#8249;</button><button class="nav-btn next-btn">&#8250;</button></div>
         `;
         header.querySelector('.prev-btn').onclick = () => changeMonth(type, -1);
         header.querySelector('.next-btn').onclick = () => changeMonth(type, 1);
