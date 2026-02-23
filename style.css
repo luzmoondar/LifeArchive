@@ -69,10 +69,16 @@ body {
     align-items: center;
 }
 
-.logout-btn {
-    background: #f1f5f9;
-    color: var(--text-light);
-    border: 1px solid var(--border);
+.title-bar-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.logout-btn, .reset-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0.5rem 1rem;
     border-radius: 0.75rem;
     font-size: 0.85rem;
@@ -85,6 +91,12 @@ body {
     background: #fee2e2;
     color: var(--danger);
     border-color: #fecaca;
+}
+
+.reset-btn:hover {
+    background: #fff7ed;
+    color: #ea580c;
+    border-color: #ffedd5;
 }
 
 .tab-nav {

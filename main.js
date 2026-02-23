@@ -800,11 +800,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentUser = session.user;
             authOverlay.classList.remove('active');
             document.getElementById('btn-logout').style.display = 'block';
+            document.getElementById('btn-reset-all').style.display = 'block';
             loadFromCloud();
         } else {
             currentUser = null;
             authOverlay.classList.add('active');
             document.getElementById('btn-logout').style.display = 'none';
+            document.getElementById('btn-reset-all').style.display = 'none';
             // 로그아웃 시 상태 초기화 (원하는 경우)
             resetState();
             refreshAllUI();
@@ -1063,6 +1065,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         saveToLocal();
         renderDetailTables();
+    };
+
+    // 전체 데이터 초기화 기능
+    document.getElementById('btn-reset-all').onclick = async () => {
+        if (confirm('⚠️ 모든 데이터(가계부, 기록, 카테고리 등)를 정말 초기화하시겠습니까? \n이 작업은 되돌릴 수 없으며 클라우드 데이터도 모두 삭제됩니다.')) {
+            resetState(); // 로컬 및 state 초기화
+            await saveState(); // 빈 상태를 서버에 저장 (실제로는 새로운 빈 로그를 insert)
+            refreshAllUI();
+            alert('모든 데이터가 초기화되었습니다.');
+        }
     };
 
     // Initial Render
