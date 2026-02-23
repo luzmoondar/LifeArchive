@@ -1106,28 +1106,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''}>
                     </div>
                 </td>
-                <td class="row-action-cell">
-                    <button class="remove-row-btn" title="삭제" style="opacity:1;">✕</button>
-                </td>
             `;
 
             const nameInput = tr.querySelector('.wedding-name');
             const receivedInput = tr.querySelector('.wedding-received');
             const paidInput = tr.querySelector('.wedding-paid');
             const attendedInput = tr.querySelector('.wedding-attended');
-            const removeBtn = tr.querySelector('.remove-row-btn');
 
             nameInput.oninput = (e) => { item.name = e.target.value; saveToLocal(); };
             receivedInput.oninput = (e) => { item.received = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
             paidInput.oninput = (e) => { item.paid = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
             attendedInput.onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
-            removeBtn.onclick = () => {
-                if (confirm('이 항목을 삭제하시겠습니까?')) {
-                    state.weddingData = state.weddingData.filter(d => d.id !== item.id);
-                    saveState();
-                    renderWeddingTable();
-                }
-            };
+
             return tr;
         }
 
