@@ -162,33 +162,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     function updateStats() {
         const currentMonth = state.viewDates.account;
 
-        // 상세가계부 합계 계산
-        const detailPersonalTotal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const detailSharedTotal = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const totalDetailExpense = detailPersonalTotal + detailSharedTotal;
+        // 상세가계부 합계 계산 (모든 달 합산 - 전체통계용)
+        let totalDetailPersonal = 0;
+        let totalDetailShared = 0;
+        
+        // 고정 항목(pinnedItems)은 모든 달에 공통으로 적용되므로, 데이터가 있는 각 달마다 합산해줍니다.
+        const pinnedPersonalTotal = (state.pinnedItems?.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+        const pinnedSharedTotal = (state.pinnedItems?.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+        const pinnedTotal = pinnedPersonalTotal + pinnedSharedTotal;
+
+        const detailMonths = Object.keys(state.detailData || {});
+        detailMonths.forEach(monthKey => {
+            const mData = state.detailData[monthKey];
+            totalDetailPersonal += (mData.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+            totalDetailShared += (mData.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0);
+            // 해당 달에 고정 항목만큼의 지출이 발생한 것으로 간주
+            totalDetailPersonal += pinnedPersonalTotal;
+            totalDetailShared += pinnedSharedTotal;
+        });
+
+        // 이번 달 상세가계부 합계 (가계부 탭용)
+        const currentDetailData = state.detailData[currentMonth] || { personal: [], shared: [] };
+        const currentDetailPersonal = (currentDetailData.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0) + pinnedPersonalTotal;
+        const currentDetailShared = (currentDetailData.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0) + pinnedSharedTotal;
+        const currentMonthDetailExpense = currentDetailPersonal + currentDetailShared;
 
         // 전체 통계용 (All Time)
         const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
         const totalBaseExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpense = totalBaseExpense + totalDetailExpense; // 상세지출 포함
+        const totalExpense = totalBaseExpense + totalDetailPersonal + totalDetailShared;
         const totalSavings = state.transactions.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('total-income').textContent = `${totalIncome.toLocaleString()}원`;
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
-        // 총 보유자산 (수입/지출 합산 없이, '자산' 항목에 입력된 금액만 합산)
-        // 사용자가 "총보유자산이 왜 늘어났지? 내가 적어넣은것만 기재해줘"라고 요청함.
+        // 총 보유자산
         const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
-
         const totalAssetStatsEl = document.getElementById('total-asset-stats');
         if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
 
-        // 이번 달 통계용
+        // 이번 달 통계용 (가계부 탭)
         const monthlyIncome = state.transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
         const monthlyBaseExpense = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
-        // 상세가계부는 '현재 선택된 달'의 데이터라고 가정 (별도 날짜 필드가 없으므로)
-        const monthlyExpense = monthlyBaseExpense + totalDetailExpense;
+        const monthlyExpense = monthlyBaseExpense + currentMonthDetailExpense;
         const monthlySavings = state.transactions.filter(t => t.type === 'savings' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('acc-monthly-income').textContent = `${monthlyIncome.toLocaleString()}원`;
@@ -201,10 +218,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
         if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
 
-        updateCharts(totalExpense, totalSavings);
+        updateCharts(totalExpense, totalSavings, totalDetailPersonal, totalDetailShared);
     }
 
-    function updateCharts(totalExpense, totalSavings) {
+    function updateCharts(totalExpense, totalSavings, detailPersonal, detailShared) {
         const getCtx = (id) => {
             const el = document.getElementById(id);
             return el ? el.getContext('2d') : null;
@@ -222,10 +239,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             name: cat,
             value: state.transactions.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
-
-        // 상세가계부 데이터 추가
-        const detailPersonal = state.detailData.personal.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const detailShared = state.detailData.shared.reduce((sum, item) => sum + (item.amount || 0), 0);
 
         if (detailPersonal > 0) expenseData.push({ name: '상세(개인)', value: detailPersonal });
         if (detailShared > 0) expenseData.push({ name: '상세(공용)', value: detailShared });
@@ -804,7 +817,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             issues: [],
             viewDates: {
                 account: new Date().toISOString().slice(0, 7),
-                life: new Date().toISOString().slice(0, 7)
+                life: new Date().toISOString().slice(0, 7),
+                detail: new Date().toISOString().slice(0, 7)
             }
         };
         localStorage.removeItem('life-state');
@@ -1002,6 +1016,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const total = pinnedTotal + regularTotal;
         const totalEl = document.getElementById(`${type}-total`);
         if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
+
+        // 상세 금액이 바뀌었으므로 전체 통계도 갱신
+        updateStats();
 
         const budget = monthData.budgets[type] || 0;
         const remaining = budget - total;
