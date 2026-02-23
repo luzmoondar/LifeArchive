@@ -1073,21 +1073,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Wedding Gift Tab Logic ---
     function renderWeddingTable() {
-        const body = document.getElementById('wedding-table-body');
-        if (!body) return;
-        body.innerHTML = '';
+        const body1 = document.getElementById('wedding-table-body-1');
+        const body2 = document.getElementById('wedding-table-body-2');
+        if (!body1 || !body2) return;
+        body1.innerHTML = '';
+        body2.innerHTML = '';
 
-        const data = state.weddingData || [];
+        // 최소 40개 데이터 보장
+        let stateChanged = false;
+        if (!state.weddingData) state.weddingData = [];
+        while (state.weddingData.length < 40) {
+            state.weddingData.push({
+                id: 'wd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                name: '', received: 0, paid: 0, attended: false
+            });
+            stateChanged = true;
+        }
+        if (stateChanged) saveToLocal();
 
-        data.forEach((item, index) => {
+        const data = state.weddingData;
+
+        // 헬퍼: 행 생성
+        function createWeddingRow(item, index) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
-                <td><input type="text" class="wedding-name" value="${item.name || ''}" placeholder="이름 입력"></td>
-                <td><input type="number" class="wedding-received" value="${item.received || ''}" placeholder="받은 금액"></td>
-                <td><input type="number" class="wedding-paid" value="${item.paid || ''}" placeholder="낸 금액"></td>
+                <td><input type="text" class="wedding-name" value="${item.name || ''}" placeholder="이름"></td>
+                <td><input type="number" class="wedding-received" value="${item.received || ''}" placeholder="0"></td>
+                <td><input type="number" class="wedding-paid" value="${item.paid || ''}" placeholder="0"></td>
                 <td style="text-align: center;">
-                    <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                    <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
                 </td>
                 <td class="row-action-cell">
                     <button class="remove-row-btn" title="삭제" style="opacity:1;">✕</button>
@@ -1101,16 +1116,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const removeBtn = tr.querySelector('.remove-row-btn');
 
             nameInput.oninput = (e) => { item.name = e.target.value; saveToLocal(); };
-            receivedInput.oninput = (e) => {
-                item.received = parseInt(e.target.value) || 0;
-                saveToLocal();
-                updateWeddingTotals();
-            };
-            paidInput.oninput = (e) => {
-                item.paid = parseInt(e.target.value) || 0;
-                saveToLocal();
-                updateWeddingTotals();
-            };
+            receivedInput.oninput = (e) => { item.received = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
+            paidInput.oninput = (e) => { item.paid = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
             attendedInput.onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
             removeBtn.onclick = () => {
                 if (confirm('이 항목을 삭제하시겠습니까?')) {
@@ -1119,10 +1126,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     renderWeddingTable();
                 }
             };
+            return tr;
+        }
 
-            body.appendChild(tr);
-        });
-
+        data.slice(0, 20).forEach((item, i) => body1.appendChild(createWeddingRow(item, i)));
+        data.slice(20).forEach((item, i) => body2.appendChild(createWeddingRow(item, i + 20)));
         updateWeddingTotals();
     }
 
@@ -1130,22 +1138,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = state.weddingData || [];
         const totalReceived = data.reduce((sum, item) => sum + (item.received || 0), 0);
         const totalPaid = data.reduce((sum, item) => sum + (item.paid || 0), 0);
-
-        document.getElementById('wedding-received-total').textContent = `${totalReceived.toLocaleString()}원`;
-        document.getElementById('wedding-paid-total').textContent = `${totalPaid.toLocaleString()}원`;
+        const elReceived = document.getElementById('wedding-received-total');
+        const elPaid = document.getElementById('wedding-paid-total');
+        if (elReceived) elReceived.textContent = `${totalReceived.toLocaleString()}원`;
+        if (elPaid) elPaid.textContent = `${totalPaid.toLocaleString()}원`;
     }
 
-    document.getElementById('add-wedding-row').onclick = () => {
-        state.weddingData.push({
-            id: 'wd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-            name: '',
-            received: 0,
-            paid: 0,
-            attended: false
-        });
-        saveState();
-        renderWeddingTable();
-    };
+    if (document.getElementById('add-wedding-row-1')) {
+        document.getElementById('add-wedding-row-1').onclick = () => {
+            state.weddingData.splice(20, 0, { id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
+            saveState(); renderWeddingTable();
+        };
+    }
+    if (document.getElementById('add-wedding-row-2')) {
+        document.getElementById('add-wedding-row-2').onclick = () => {
+            state.weddingData.push({ id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
+            saveState(); renderWeddingTable();
+        };
+    }
 
     // 전체 데이터 초기화 기능
     document.getElementById('btn-reset-all').onclick = async () => {
