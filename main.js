@@ -26,7 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             detail: new Date().toISOString().slice(0, 7)
         },
         detailData: {}, // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
-        pinnedItems: { personal: [], shared: [] } // 모든 달에 상단 고정되는 항목
+        pinnedItems: { personal: [], shared: [] }, // 모든 달에 상단 고정되는 항목
+        weddingData: [] // 축의금 데이터 [{ id, name, received, paid, attended }]
     };
 
     // 로컬 데이터 먼저 불러오기
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             personal: parsed.pinnedItems?.personal || [],
             shared: parsed.pinnedItems?.shared || []
         };
+        state.weddingData = parsed.weddingData || [];
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
             life: new Date().toISOString().slice(0, 7),
@@ -126,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderIssues();
         renderStockList();
         renderDetailTables();
+        renderWeddingTable();
         updateStats();
     }
 
@@ -826,7 +829,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 account: new Date().toISOString().slice(0, 7),
                 life: new Date().toISOString().slice(0, 7),
                 detail: new Date().toISOString().slice(0, 7)
-            }
+            },
+            weddingData: []
         };
         localStorage.removeItem('life-state');
     }
@@ -1065,6 +1069,82 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         saveToLocal();
         renderDetailTables();
+    };
+
+    // --- Wedding Gift Tab Logic ---
+    function renderWeddingTable() {
+        const body = document.getElementById('wedding-table-body');
+        if (!body) return;
+        body.innerHTML = '';
+
+        const data = state.weddingData || [];
+
+        data.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
+                <td><input type="text" class="wedding-name" value="${item.name || ''}" placeholder="이름 입력"></td>
+                <td><input type="number" class="wedding-received" value="${item.received || ''}" placeholder="받은 금액"></td>
+                <td><input type="number" class="wedding-paid" value="${item.paid || ''}" placeholder="낸 금액"></td>
+                <td style="text-align: center;">
+                    <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                </td>
+                <td class="row-action-cell">
+                    <button class="remove-row-btn" title="삭제" style="opacity:1;">✕</button>
+                </td>
+            `;
+
+            const nameInput = tr.querySelector('.wedding-name');
+            const receivedInput = tr.querySelector('.wedding-received');
+            const paidInput = tr.querySelector('.wedding-paid');
+            const attendedInput = tr.querySelector('.wedding-attended');
+            const removeBtn = tr.querySelector('.remove-row-btn');
+
+            nameInput.oninput = (e) => { item.name = e.target.value; saveToLocal(); };
+            receivedInput.oninput = (e) => {
+                item.received = parseInt(e.target.value) || 0;
+                saveToLocal();
+                updateWeddingTotals();
+            };
+            paidInput.oninput = (e) => {
+                item.paid = parseInt(e.target.value) || 0;
+                saveToLocal();
+                updateWeddingTotals();
+            };
+            attendedInput.onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
+            removeBtn.onclick = () => {
+                if (confirm('이 항목을 삭제하시겠습니까?')) {
+                    state.weddingData = state.weddingData.filter(d => d.id !== item.id);
+                    saveState();
+                    renderWeddingTable();
+                }
+            };
+
+            body.appendChild(tr);
+        });
+
+        updateWeddingTotals();
+    }
+
+    function updateWeddingTotals() {
+        const data = state.weddingData || [];
+        const totalReceived = data.reduce((sum, item) => sum + (item.received || 0), 0);
+        const totalPaid = data.reduce((sum, item) => sum + (item.paid || 0), 0);
+
+        document.getElementById('wedding-received-total').textContent = `${totalReceived.toLocaleString()}원`;
+        document.getElementById('wedding-paid-total').textContent = `${totalPaid.toLocaleString()}원`;
+    }
+
+    document.getElementById('add-wedding-row').onclick = () => {
+        state.weddingData.push({
+            id: 'wd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+            name: '',
+            received: 0,
+            paid: 0,
+            attended: false
+        });
+        saveState();
+        renderWeddingTable();
     };
 
     // 전체 데이터 초기화 기능

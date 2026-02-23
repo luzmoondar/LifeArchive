@@ -33,6 +33,7 @@
                     <button class="tab-btn active" data-tab="stats">전체통계</button>
                     <button class="tab-btn" data-tab="account">가계부</button>
                     <button class="tab-btn" data-tab="detail">상세가계부</button>
+                    <button class="tab-btn" data-tab="wedding">축의금</button>
                     <button class="tab-btn" data-tab="monthly">생활먼슬리</button>
                 </nav>
             </header>
@@ -133,8 +134,41 @@
                                 </div>
                             </div>
                         </div><!-- end detail-grid -->
-                    </div><!-- end detail-card -->
+                </section>
 
+                <!-- Wedding Gift Tab -->
+                <section id="wedding" class="tab-content">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <div class="title-with-summary" style="display: flex; align-items: center; gap: 20px;">
+                                <h4>축의금 관리</h4>
+                                <div class="wedding-summary" style="font-size: 0.9rem; color: var(--text-light);">
+                                    <span>받은 총액: <strong id="wedding-received-total"
+                                            style="color: var(--primary);">0원</strong></span>
+                                    <span style="margin-left: 15px;">내가 낸 총액: <strong id="wedding-paid-total"
+                                            style="color: var(--danger);">0원</strong></span>
+                                </div>
+                            </div>
+                            <button class="add-btn" id="add-wedding-row">+</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="detail-table wedding-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">No.</th>
+                                        <th>이름</th>
+                                        <th>받은 축의금</th>
+                                        <th>내가 낸 축의금</th>
+                                        <th style="width: 100px;">참석여부</th>
+                                        <th style="width: 60px;">관리</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="wedding-table-body">
+                                    <!-- rows added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </section>
                 <!-- Total Statistics Tab -->
                 <section id="stats" class="tab-content active">
