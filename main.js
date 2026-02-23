@@ -1101,8 +1101,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><input type="text" class="wedding-name" value="${item.name || ''}" placeholder="이름"></td>
                 <td><input type="number" class="wedding-received" value="${item.received || ''}" placeholder="0"></td>
                 <td><input type="number" class="wedding-paid" value="${item.paid || ''}" placeholder="0"></td>
-                <td style="text-align: center;">
-                    <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                <td>
+                    <div class="wedding-attended-cell">
+                        <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''}>
+                    </div>
                 </td>
                 <td class="row-action-cell">
                     <button class="remove-row-btn" title="삭제" style="opacity:1;">✕</button>
