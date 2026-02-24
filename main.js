@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log("Supabase에서 데이터를 불러오는 중...");
             const { data, error } = await supabaseClient
                 .from('user_categories')
-                .select('*')
-                .eq('user_id', currentUser.id)
+                .select('expense')
+                .limit(1)
                 .maybeSingle();
 
             if (error) {
@@ -935,9 +935,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Service Worker Registration ---
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('Service Worker registered!'))
-                .catch(err => console.log('Service Worker failed:', err));
+            // 절대 경로 /sw.js 대신 상대 경로 sw.js 사용 (GitHub Pages 대응)
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('✅ Service Worker 등록 완료!'))
+                .catch(err => console.log('❌ Service Worker 등록 실패:', err));
         });
     }
 
