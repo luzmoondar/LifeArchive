@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- Modal Logic ---
     const modal = document.getElementById('entry-modal');
-    const closeBtn = document.querySelector('.close-modal');
+    const closeBtn = document.querySelector('#entry-modal .close-modal');
     const saveBtn = document.getElementById('save-entry');
 
     document.getElementById('acc-income-card').onclick = () => openModal('수입', 'income');
@@ -571,7 +571,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function closeModal() { modal.classList.remove('active'); }
     closeBtn.onclick = closeModal;
-    window.onclick = (e) => { if (e.target === modal) closeModal(); if (e.target === document.getElementById('life-day-modal')) document.getElementById('life-day-modal').classList.remove('active'); };
+    window.onclick = (e) => {
+        if (e.target === modal) closeModal();
+        if (e.target === document.getElementById('acc-day-modal')) document.getElementById('acc-day-modal').classList.remove('active');
+        if (e.target === document.getElementById('life-day-modal')) document.getElementById('life-day-modal').classList.remove('active');
+    };
 
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
