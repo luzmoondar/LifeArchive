@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Supabase Configuration
-    const SUPABASE_URL = 'https://ljaemqxownqhnrwuhljr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYWVtcXhvd25xaG5yd3VobGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0OTk3NDMsImV4cCI6MjA4NzA3NTc0M30.1HET03hneFsQ-FryAhdUpsOLYy5hvx1CF44_wluD8us';
+    const SUPABASE_URL = 'https://rqdwpnddynwjgekopiea.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxZHdwbmRkeW53amdla29waWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MzQ3MzcsImV4cCI6MjA4NjQxMDczN30.i431TCpDpYQ6wObMnr62iRiqF6tyDj5hRGk73ZPFe4Y';
 
     // Supabase 클라이언트 초기화
     const { createClient } = supabase;
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             // 여러 컬럼을 한 번에 조회
             const { data, error } = await supabaseClient
-                .from('life')
+                .from('user_categories')
                 .select('expense, income, savings')
                 .eq('user_id', currentUser.id)
                 .maybeSingle();
@@ -144,6 +144,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setSyncStatus('online', '클라우드 연동 완료');
             } else {
                 setSyncStatus('online', '새 데이터 (클라우드 비어있음)');
+                // 만약 기존 로컬 데이터가 있다면, 클라우드에 최초 1회 업로드 진행
+                if (state.transactions.length > 0 || state.issues.length > 0 || state.logs.length > 0) {
+                    isInitialLoading = false;
+                    saveState(); // 빈 클라우드에 현재 상태 저장
+                }
             }
         } catch (e) {
             console.error("❌ 데이터 불러오기 실패:", e);
@@ -168,7 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 현재 테이블 구조에 맞춰 expense, income, savings 컬럼에 각각 데이터 분산 저장
             // (기존의 전체 state를 expense에 넣되, 구조 상 가시성을 위해 나중에 분리 가능)
             const { error } = await supabaseClient
-                .from('life')
+                .from('user_categories')
                 .upsert(
                     {
                         user_id: currentUser.id,
@@ -987,7 +992,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             try {
                 // 1. 데이터베이스에서 내용 삭제
                 const { error: deleteError } = await supabaseClient
-                    .from('life')
+                    .from('user_categories')
                     .delete()
                     .eq('user_id', currentUser.id);
 
