@@ -1016,8 +1016,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         state = {
             transactions: [],
             categories: {
-                expense: ['식비', '생활', '교통', '여가'],
-                savings: ['적금', '투자', '비상금']
+                expense: ['생활비', '집', '개인생활비'],
+                savings: ['적금', '주식', '청약']
             },
             logs: [],
             issues: [],
