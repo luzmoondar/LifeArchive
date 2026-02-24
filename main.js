@@ -157,9 +157,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCategoryGrids();
         renderIssues();
         renderStockList();
-        renderDetailTables();
         renderWeddingCosts();
         renderWeddingGifts();
+        renderDetailTables(); // 상세가계부 렌더링 추가
         updateStats();
     }
 
@@ -195,14 +195,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const targetContent = document.getElementById(tabId);
         if (targetContent) targetContent.classList.add('active');
 
+        // 상세가계부 탭 클릭 시 즉시 렌더링
+        if (tabId === 'detail') renderDetailTables();
+        if (tabId === 'wedding') { renderWeddingCosts(); renderWeddingGifts(); }
+
         // 상단 버튼 동기화
         tabs.forEach(t => {
             if (t.dataset.tab === tabId || t.getAttribute('onclick')?.includes(tabId)) {
                 t.classList.add('active');
             }
         });
-
-
     };
 
     tabs.forEach(tab => {
@@ -1023,14 +1025,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const pinned = state.pinnedItems[type];
 
         const monthData = getDetailMonth();
+        if (!monthData[type]) monthData[type] = [];
         const data = monthData[type];
 
-        let stateChanged = false;
-        while (data.length < 20) {
-            data.push({ id: 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), title: '', amount: 0 });
-            stateChanged = true;
+        // 최소 20행 보장 로직 개선
+        if (data.length < 20) {
+            for (let i = data.length; i < 20; i++) {
+                data.push({ id: 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), title: '', amount: 0 });
+            }
+            saveToLocal(); // 한 번만 저장
         }
-        if (stateChanged) saveToLocal();
 
         // 헬퍼: 행 DOM 생성
         function makeRow(item, index, isPinned) {
