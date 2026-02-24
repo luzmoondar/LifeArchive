@@ -80,8 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data, error } = await supabaseClient
                 .from('user_categories')
                 .select('expense')
-                .eq('user_id', currentUser.id) // 필터 다시 추가
-                .limit(1)
+                .eq('user_id', currentUser.id)
                 .maybeSingle();
 
             console.log("🔍 브라우저에 표시할 데이터 확인:", data);
