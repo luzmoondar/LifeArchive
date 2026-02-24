@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 전체 통계용 (All Time)
         const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
         const totalBaseExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpense = totalBaseExpense + totalDetailPersonal + totalDetailShared;
+        const totalExpense = totalBaseExpense; // 상세가계부 합계는 별도 (연동 안 함)
         const totalSavings = state.transactions.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('total-income').textContent = `${totalIncome.toLocaleString()}원`;
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const monthlyIncome = rangeTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
         const monthlyBaseExpense = rangeTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const monthlyExpense = monthlyBaseExpense + currentMonthDetailExpense;
+        const monthlyExpense = monthlyBaseExpense; // 상세가계부 합계는 별도 (연동 안 함)
         const monthlySavings = rangeTrans.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('acc-monthly-income').textContent = `${monthlyIncome.toLocaleString()}원`;
@@ -308,9 +308,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
         if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
 
-        // 집계 기간 툴팁 표시
+        // 집계 기간 표시 (툴팁 + 하단 텍스트)
         const calendarTitle = document.querySelector('#account-calendar .calendar-header h3');
         if (calendarTitle) calendarTitle.title = `집계 기간: ${range.start} ~ ${range.end}`;
+
+        const rangeInfoEl = document.getElementById('salary-range-info');
+        if (rangeInfoEl) {
+            if (salaryDay === 1) {
+                rangeInfoEl.style.display = 'none';
+            } else {
+                rangeInfoEl.style.display = 'block';
+                rangeInfoEl.textContent = `📊 집계 기간: ${range.start} ~ ${range.end}`;
+            }
+        }
 
         updateCharts(totalExpense, totalSavings, totalDetailPersonal, totalDetailShared);
     }
@@ -1398,17 +1408,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Initial Render
     // 시작일(급여일) 설정 이벤트
+    function updateSalaryRangeInfo() {
+        const infoEl = document.getElementById('salary-range-info');
+        if (!infoEl) return;
+        const day = state.salaryDay || 1;
+        if (day === 1) {
+            infoEl.style.display = 'none';
+            infoEl.textContent = '';
+        } else {
+            const range = getDateRangeForMonth(state.viewDates.account, day);
+            infoEl.style.display = 'block';
+            infoEl.textContent = `📊 집계 기간: ${range.start} ~ ${range.end}`;
+        }
+    }
+
     const salaryDayInput = document.getElementById('setting-salary-day');
     if (salaryDayInput) {
         salaryDayInput.value = state.salaryDay || 1; // 초기값 설정
+        updateSalaryRangeInfo(); // 초기 표시
         salaryDayInput.onchange = (e) => {
             let val = Number(e.target.value);
             if (val < 1) val = 1;
-            if (val > 28) val = 28; // 29, 30, 31일은 달마다 달라지므로 최대 28일로 제한
+            if (val > 28) val = 28;
             e.target.value = val;
             state.salaryDay = val;
             saveState();
             updateStats();
+            updateSalaryRangeInfo();
         };
     }
 

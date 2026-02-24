@@ -185,11 +185,14 @@
                         </div>
                         <div class="details-side">
                             <div class="settings-row"
-                                style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-light);">
+                                style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-light); flex-wrap: wrap;">
                                 📅 한 달 기준: 매월
                                 <input type="number" id="setting-salary-day" value="1" min="1" max="28"
-                                    style="width: 45px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 2px 5px; border-radius: 4px; text-align: center;">
+                                    style="width: 45px; background: #f7f7ff; border: 1px solid #e4e7ea; color: var(--text); padding: 2px 5px; border-radius: 4px; text-align: center; font-weight: 600;">
                                 일 시작
+                            </div>
+                            <div id="salary-range-info"
+                                style="font-size: 0.75rem; color: var(--text-light); margin-bottom: 12px; display: none;">
                             </div>
                             <div class="summary-grid monthly-summary">
                                 <div class="summary-card income clickable" id="acc-income-card">

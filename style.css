@@ -1061,7 +1061,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    border: 1px solid #e4e7ea;
+    border: 1px solid #f1f4f9;
     min-width: 0;
     /* 내용이 길어도 칸이 늘어나지 않도록 방지 */
     overflow: hidden;
