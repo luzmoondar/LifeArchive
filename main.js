@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Wedding 데이터 이관 지원
         state.weddingCosts = parsed.weddingCosts || state.weddingCosts;
         state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
+        state.savingsItems = parsed.savingsItems || [];
 
         // 접속 시에는 무조건 "이번 달"로 고정
         resetViewDatesToToday();
@@ -196,6 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderWeddingCosts();
         renderWeddingGifts();
         renderDetailTables(); // 상세가계부 렌더링 추가
+        renderSavingsItems(); // 새로 추가한 자산/적금 렌더링
         updateStats();
     }
 
@@ -295,8 +297,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 총 보유자산
         const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
-        const totalAssetStatsEl = document.getElementById('total-asset-stats');
-        if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
+        const totalAssetStatsNewEl = document.getElementById('total-asset-stats-new');
+        if (totalAssetStatsNewEl) totalAssetStatsNewEl.textContent = `${totalAsset.toLocaleString()}원`;
 
         // --- 이번 달 통계용 (커스텀 날짜 범위 적용) ---
         const rangeTrans = state.transactions.filter(t => t.date >= range.start && t.date <= range.end);
@@ -998,7 +1000,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 { id: 'group3', title: '', items: [] }
             ],
             weddingGifts: [],
-            salaryDay: 1
+            salaryDay: 1,
+            savingsItems: [] // 자산 및 만기 현황 아이템
         };
         localStorage.removeItem('life-state');
     }
@@ -1465,6 +1468,148 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateStats();
             updateSalaryRangeInfo();
         };
+    }
+
+    // --- 자산 및 만기 현황 (Savings Items) ---
+    const savingsModal = document.getElementById('savings-modal');
+    const closeSavingsModalBtn = document.getElementById('close-savings-modal');
+    const saveSavingsBtn = document.getElementById('save-savings-item');
+    const addSavingsBtn = document.getElementById('btn-add-savings');
+
+    let currentEditingSavingsId = null;
+
+    if (addSavingsBtn) {
+        addSavingsBtn.onclick = () => {
+            currentEditingSavingsId = null;
+            document.getElementById('savings-name').value = '';
+            document.getElementById('savings-target-amount').value = '';
+            document.getElementById('savings-start-date').value = formatLocalDate(new Date());
+            document.getElementById('savings-end-date').value = '';
+            savingsModal.classList.add('active');
+        };
+    }
+    if (closeSavingsModalBtn) closeSavingsModalBtn.onclick = () => savingsModal.classList.remove('active');
+
+    // 모달 배경 클릭
+    window.addEventListener('click', (e) => {
+        if (e.target === savingsModal) savingsModal.classList.remove('active');
+    });
+
+    if (saveSavingsBtn) {
+        saveSavingsBtn.onclick = () => {
+            const name = document.getElementById('savings-name').value.trim();
+            const targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
+            const startDate = document.getElementById('savings-start-date').value;
+            const endDate = document.getElementById('savings-end-date').value;
+
+            if (!name || !startDate || !endDate) return alert('모든 항목을 입력해주세요.');
+            if (new Date(startDate) >= new Date(endDate)) return alert('만기일은 시작일보다 늦어야 합니다.');
+
+            state.savingsItems = state.savingsItems || [];
+
+            if (currentEditingSavingsId) {
+                const item = state.savingsItems.find(i => i.id === currentEditingSavingsId);
+                if (item) {
+                    item.name = name;
+                    item.targetAmount = targetAmount;
+                    item.startDate = startDate;
+                    item.endDate = endDate;
+                }
+            } else {
+                state.savingsItems.push({
+                    id: crypto.randomUUID(),
+                    name,
+                    targetAmount,
+                    startDate,
+                    endDate,
+                    createdAt: Date.now()
+                });
+            }
+
+            savingsModal.classList.remove('active');
+            saveState();
+            renderSavingsItems();
+        };
+    }
+
+    window.editSavingsItem = (id) => {
+        const item = state.savingsItems.find(i => i.id === id);
+        if (!item) return;
+
+        currentEditingSavingsId = id;
+        document.getElementById('savings-name').value = item.name;
+        document.getElementById('savings-target-amount').value = item.targetAmount || 0;
+        document.getElementById('savings-start-date').value = item.startDate;
+        document.getElementById('savings-end-date').value = item.endDate;
+        savingsModal.classList.add('active');
+    };
+
+    window.deleteSavingsItem = (id) => {
+        if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+        state.savingsItems = state.savingsItems.filter(i => i.id !== id);
+        saveState();
+        renderSavingsItems();
+    };
+
+    function renderSavingsItems() {
+        const listEl = document.getElementById('savings-list');
+        if (!listEl) return;
+        state.savingsItems = state.savingsItems || [];
+
+        if (state.savingsItems.length === 0) {
+            listEl.innerHTML = `<div class="savings-empty-state">우측 상단의 + 버튼을 눌러 적금/예금을 추가해보세요.</div>`;
+            return;
+        }
+
+        const today = new Date();
+        // 시간은 0시0분0초로 통일하여 날짜만 비교
+        today.setHours(0, 0, 0, 0);
+
+        listEl.innerHTML = state.savingsItems.map(item => {
+            const start = new Date(item.startDate);
+            const end = new Date(item.endDate);
+
+            // 날짜 계산
+            const totalDays = Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
+            let passedDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+            passedDays = Math.max(0, Math.min(passedDays, totalDays)); // 0과 totalDays 사이
+
+            const remainingDays = totalDays - passedDays;
+            const progressPct = Math.min(100, Math.max(0, (passedDays / totalDays) * 100));
+
+            const isDone = remainingDays <= 0;
+
+            return `
+                <div class="savings-item-card">
+                    <div class="savings-card-header">
+                        <div class="savings-card-title">
+                            <h5>${safeHTML(item.name)}</h5>
+                            <div class="savings-card-amount">목표: ${item.targetAmount ? item.targetAmount.toLocaleString() + '원' : '금액 미정'}</div>
+                        </div>
+                        <div class="savings-card-actions">
+                            <button onclick="editSavingsItem('${item.id}')" title="수정">✏️</button>
+                            <button onclick="deleteSavingsItem('${item.id}')" title="삭제">❌</button>
+                        </div>
+                    </div>
+                    
+                    <div class="savings-date-info">
+                        <span>${item.startDate} ~ ${item.endDate}</span>
+                    </div>
+
+                    <div class="gauge-container">
+                        <div class="gauge-meta mb-1">
+                            <span>진행률: ${progressPct.toFixed(1)}%</span>
+                            <span class="days-left ${isDone ? 'done' : ''}">
+                                ${isDone ? '🎉 만기 달성!' : 'D-' + remainingDays}
+                            </span>
+                        </div>
+                        <div class="gauge-bar">
+                            <div class="gauge-fill ${isDone ? 'completed' : ''}" style="width: ${progressPct}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     refreshAllUI();
