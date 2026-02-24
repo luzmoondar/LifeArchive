@@ -296,7 +296,7 @@ body {
 }
 
 #stats .summary-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     width: 100%;
     gap: 1.5rem;
     margin-bottom: 2rem;
@@ -598,7 +598,8 @@ body {
     color: var(--text-light);
 }
 
-.modal-body input {
+.modal-body input,
+.modal-body select {
     padding: 0.8rem;
     border: 1px solid var(--border);
     border-radius: 0.75rem;

@@ -133,7 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 state = {
                     ...state,
                     ...cloudExpense,
-                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) }
+                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) },
+                    savingsItems: cloudExpense.savingsItems || state.savingsItems || []
                 };
 
                 // 클라우드 데이터를 불러오더라도 "현재 보고 있는 날짜"는 오늘로 유지
@@ -1516,11 +1517,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentEditingSavingsId = null;
 
+    const savingsTypeSelect = document.getElementById('savings-type');
+    if (savingsTypeSelect) {
+        savingsTypeSelect.addEventListener('change', (e) => {
+            const isInstallment = e.target.value === '적금';
+            const targetGroup = document.getElementById('savings-target-group');
+            const targetLabel = document.getElementById('savings-target-label');
+
+            if (isInstallment) {
+                targetGroup.style.display = 'none';
+            } else {
+                targetGroup.style.display = 'flex';
+                targetLabel.textContent = '예치 금액';
+            }
+
+            document.getElementById('savings-monthly-group').style.display = isInstallment ? 'flex' : 'none';
+            document.getElementById('savings-interest-group').style.display = isInstallment ? 'flex' : 'none';
+        });
+    }
+
     if (addSavingsBtn) {
         addSavingsBtn.onclick = () => {
             currentEditingSavingsId = null;
+            document.getElementById('savings-type').value = '적금';
+            if (savingsTypeSelect) savingsTypeSelect.dispatchEvent(new Event('change'));
             document.getElementById('savings-name').value = '';
             document.getElementById('savings-target-amount').value = '';
+            document.getElementById('savings-monthly-amount').value = '';
+            document.getElementById('savings-interest').value = '';
             document.getElementById('savings-start-date').value = formatLocalDate(new Date());
             document.getElementById('savings-end-date').value = '';
             savingsModal.classList.add('active');
@@ -1535,10 +1559,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (saveSavingsBtn) {
         saveSavingsBtn.onclick = () => {
+            const type = document.getElementById('savings-type').value;
             const name = document.getElementById('savings-name').value.trim();
-            const targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
+            const monthlyAmount = parseInt(document.getElementById('savings-monthly-amount').value) || 0;
+            const interestRate = parseFloat(document.getElementById('savings-interest').value) || 0;
             const startDate = document.getElementById('savings-start-date').value;
             const endDate = document.getElementById('savings-end-date').value;
+
+            let targetAmount = 0;
+            if (type === '적금') {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                if (start && end) {
+                    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                    targetAmount = monthlyAmount * Math.max(0, months);
+                }
+            } else {
+                targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
+            }
 
             if (!name || !startDate || !endDate) return alert('모든 항목을 입력해주세요.');
             if (new Date(startDate) >= new Date(endDate)) return alert('만기일은 시작일보다 늦어야 합니다.');
@@ -1548,16 +1586,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentEditingSavingsId) {
                 const item = state.savingsItems.find(i => i.id === currentEditingSavingsId);
                 if (item) {
+                    item.type = type;
                     item.name = name;
                     item.targetAmount = targetAmount;
+                    item.monthlyAmount = monthlyAmount;
+                    item.interestRate = interestRate;
                     item.startDate = startDate;
                     item.endDate = endDate;
                 }
             } else {
                 state.savingsItems.push({
                     id: crypto.randomUUID(),
+                    type,
                     name,
                     targetAmount,
+                    monthlyAmount,
+                    interestRate,
                     startDate,
                     endDate,
                     createdAt: Date.now()
@@ -1575,8 +1619,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!item) return;
 
         currentEditingSavingsId = id;
+        document.getElementById('savings-type').value = item.type || '적금';
+        if (savingsTypeSelect) savingsTypeSelect.dispatchEvent(new Event('change'));
         document.getElementById('savings-name').value = item.name;
         document.getElementById('savings-target-amount').value = item.targetAmount || 0;
+        document.getElementById('savings-monthly-amount').value = item.monthlyAmount || '';
+        document.getElementById('savings-interest').value = item.interestRate || '';
         document.getElementById('savings-start-date').value = item.startDate;
         document.getElementById('savings-end-date').value = item.endDate;
 
@@ -1619,12 +1667,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const isDone = remainingDays <= 0;
 
+            const typeLabel = item.type || '적금';
+            let extraInfo = '';
+            if (typeLabel === '적금') {
+                extraInfo = `
+                    <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 4px;">
+                        ${item.monthlyAmount ? '월 ' + item.monthlyAmount.toLocaleString() + '원 납입' : '월 납입액 미정'}
+                        ${item.interestRate ? ' · 이율 ' + item.interestRate + '%' : ''}
+                    </div>
+                `;
+            }
+
             return `
                 <div class="savings-item-card">
                     <div class="savings-card-header">
                         <div class="savings-card-title">
-                            <h5>${safeHTML(item.name)}</h5>
-                            <div class="savings-card-amount">목표: ${item.targetAmount ? item.targetAmount.toLocaleString() + '원' : '금액 미정'}</div>
+                            <h5><span style="color: var(--primary); font-size: 0.85em;">[${typeLabel}]</span> ${safeHTML(item.name)}</h5>
+                            <div class="savings-card-amount">${typeLabel === '적금' ? '목표' : '예치'}: ${item.targetAmount ? item.targetAmount.toLocaleString() + '원' : '미정'}</div>
+                            ${extraInfo}
                         </div>
                         <div class="savings-card-actions">
                             <button onclick="editSavingsItem('${item.id}')" title="수정">✏️</button>

@@ -173,7 +173,7 @@
                             <div class="section-card mt-4" id="asset-management-section">
                                 <div class="section-header">
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <h4 style="margin:0;">🏦 자산 및 만기 현황</h4>
+                                        <h4 style="margin:0;">🏦 자산 현황</h4>
                                         <div class="total-asset-badge">
                                             총 보유자산: <span id="total-asset-stats-new">0원</span>
                                         </div>
@@ -488,12 +488,27 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
+                    <label>상품 구분</label>
+                    <select id="savings-type">
+                        <option value="적금">적금</option>
+                        <option value="예금">예금</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>상품명</label>
                     <input type="text" id="savings-name" placeholder="예: 청년희망적금">
                 </div>
-                <div class="form-group">
-                    <label>목표 금액</label>
+                <div class="form-group" id="savings-target-group">
+                    <label id="savings-target-label">목표 금액</label>
                     <input type="number" id="savings-target-amount" placeholder="0">
+                </div>
+                <div class="form-group" id="savings-monthly-group">
+                    <label>월 납입액</label>
+                    <input type="number" id="savings-monthly-amount" placeholder="0">
+                </div>
+                <div class="form-group" id="savings-interest-group">
+                    <label>이자율 (%)</label>
+                    <input type="number" step="0.1" id="savings-interest" placeholder="0.0">
                 </div>
                 <div class="form-group">
                     <label>시작일</label>
