@@ -965,7 +965,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td style="font-weight:600;">${item.item}</td>
                 <td>${item.qty}</td>
                 <td>${parseInt(item.amount || 0).toLocaleString()}원</td>
-                <td style="display: flex; gap: 4px;">
+                <td style="display: flex; gap: 4px; justify-content: center;">
                     <button class="edit-stock-btn">수정</button>
                     <button class="delete-stock-btn">삭제</button>
                 </td>

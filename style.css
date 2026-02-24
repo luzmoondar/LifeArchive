@@ -1363,7 +1363,7 @@ body {
     color: var(--text-light);
     font-weight: 600;
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     border-bottom: 2px solid var(--border);
 }
 
@@ -1371,6 +1371,7 @@ body {
     padding: 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
+    text-align: center;
 }
 
 .stock-table tr:last-child td {
