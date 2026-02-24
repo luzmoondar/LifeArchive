@@ -1058,6 +1058,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             authMsg.textContent = "이메일과 비밀번호를 입력해주세요.";
             return;
         }
+        if (password.length < 6) {
+            authMsg.textContent = "비밀번호는 최소 6자 이상 입력해주세요.";
+            return;
+        }
         const { error } = await supabaseClient.auth.signUp({ email, password });
         if (error) authMsg.textContent = "회원가입 실패: " + error.message;
         else authMsg.textContent = "가입 확인 이메일을 확인해주세요! (이메일 인증 후 로그인 가능)";
