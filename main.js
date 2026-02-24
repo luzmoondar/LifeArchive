@@ -969,7 +969,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 life: new Date().toISOString().slice(0, 7),
                 detail: new Date().toISOString().slice(0, 7)
             },
-            weddingData: []
+            detailData: {},
+            pinnedItems: { personal: [], shared: [] },
+            weddingCosts: [
+                { id: 'group1', title: '', items: [] },
+                { id: 'group2', title: '', items: [] },
+                { id: 'group3', title: '', items: [] }
+            ],
+            weddingGifts: [],
+            salaryDay: 1
         };
         localStorage.removeItem('life-state');
     }
