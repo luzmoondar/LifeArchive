@@ -114,6 +114,19 @@ body {
     border-color: #ffedd5;
 }
 
+.delete-btn {
+    display: none;
+    background: var(--danger);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
 .tab-nav {
     display: flex;
     gap: 1rem;
