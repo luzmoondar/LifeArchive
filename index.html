@@ -44,7 +44,6 @@
             </header>
 
             <main class="content-area">
-                <!-- ... existing tabs ... -->
 
                 <!-- Detailed Account Tab -->
                 <section id="detail" class="tab-content">
@@ -137,8 +136,6 @@
                         </div><!-- end detail-grid -->
                 </section>
 
-                </section>
-                <!-- Total Statistics Tab -->
                 <section id="stats" class="tab-content active">
                     <div class="stats-layout">
                         <div class="main-stats-area">
@@ -187,6 +184,13 @@
                             <div id="account-calendar" class="calendar"></div>
                         </div>
                         <div class="details-side">
+                            <div class="settings-row"
+                                style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-light);">
+                                📅 한 달 기준: 매월
+                                <input type="number" id="setting-salary-day" value="1" min="1" max="28"
+                                    style="width: 45px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 2px 5px; border-radius: 4px; text-align: center;">
+                                일 시작
+                            </div>
                             <div class="summary-grid monthly-summary">
                                 <div class="summary-card income clickable" id="acc-income-card">
                                     <h3>이번 달 총수입</h3>

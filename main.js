@@ -21,6 +21,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log(`[Sync Status] ${status.toUpperCase()}: ${message}`);
     }
 
+    // --- 날짜 범위 집계 헬퍼 ---
+    function getDateRangeForMonth(monthKey, salaryDay) {
+        const [y, m] = monthKey.split('-').map(Number);
+        salaryDay = Number(salaryDay) || 1;
+
+        if (salaryDay === 1) {
+            // 1일 시작인 경우: 해당 월의 1일 ~ 말일
+            const start = `${y}-${String(m).padStart(2, '0')}-01`;
+            const end = `${y}-${String(m).padStart(2, '0')}-${new Date(y, m, 0).getDate()}`;
+            return { start, end };
+        } else {
+            // 그 외: 이전 달 salaryDay ~ 이번 달 salaryDay - 1
+            const startDate = new Date(y, m - 2, salaryDay);
+            const endDate = new Date(y, m - 1, salaryDay - 1);
+            return {
+                start: startDate.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0]
+            };
+        }
+    }
+
     // State Management
     let state = {
         transactions: [],
@@ -42,42 +63,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'group2', title: '', items: [] },
             { id: 'group3', title: '', items: [] }
         ],
-        weddingGifts: [] // [{ id, name, received, isPartner, hasMeal }]
+        weddingGifts: [],
+        salaryDay: 1 // 한 달 시작일 설정 (기본 1일)
     };
+
+    // --- 이번 달로 날짜 초기화 헬퍼 ---
+    function resetViewDatesToToday() {
+        const today = new Date().toISOString().slice(0, 7);
+        state.viewDates = {
+            account: today,
+            life: today,
+            detail: today
+        };
+    }
 
     // 로컬 데이터 먼저 불러오기
     const localData = localStorage.getItem('life-state');
     if (localData) {
         const parsed = JSON.parse(localData);
-        // 구버전 detailData (personal:[], shared:[]) 형식을 새 형식으로 마이그레이션
-        let migratedDetail = parsed.detailData || {};
-        if (Array.isArray(migratedDetail.personal)) {
-            const today = new Date().toISOString().slice(0, 7);
-            migratedDetail = {
-                [today]: {
-                    personal: migratedDetail.personal,
-                    shared: migratedDetail.shared || [],
-                    budgets: migratedDetail.budgets || { personal: 0, shared: 0 }
-                }
-            };
-        }
-        state = { ...state, ...parsed, detailData: migratedDetail };
-        state.pinnedItems = {
-            personal: parsed.pinnedItems?.personal || [],
-            shared: parsed.pinnedItems?.shared || []
-        };
-        // Wedding data migration/init
-        state.weddingCosts = parsed.weddingCosts || [
-            { id: 'group1', title: '', items: [] },
-            { id: 'group2', title: '', items: [] },
-            { id: 'group3', title: '', items: [] }
-        ];
+        state = { ...state, ...parsed };
+
+        // Wedding 데이터 이관 지원
+        state.weddingCosts = parsed.weddingCosts || state.weddingCosts;
         state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
-        state.viewDates = {
-            account: new Date().toISOString().slice(0, 7),
-            life: new Date().toISOString().slice(0, 7),
-            detail: new Date().toISOString().slice(0, 7)
-        };
+
+        // 접속 시에는 무조건 "이번 달"로 고정
+        resetViewDatesToToday();
     }
 
     // Supabase에서 데이터 불러오기
@@ -115,6 +126,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ...cloudExpense,
                     detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) }
                 };
+
+                // 클라우드 데이터를 불러오더라도 "현재 보고 있는 날짜"는 오늘로 유지
+                resetViewDatesToToday();
 
                 saveToLocal();
                 refreshAllUI();
@@ -233,6 +247,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function updateStats() {
         const currentMonth = state.viewDates.account;
+        const salaryDay = state.salaryDay || 1;
+        const range = getDateRangeForMonth(currentMonth, salaryDay);
 
         // 상세가계부 합계 계산 (모든 달 합산 - 전체통계용)
         let totalDetailPersonal = 0;
@@ -274,11 +290,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalAssetStatsEl = document.getElementById('total-asset-stats');
         if (totalAssetStatsEl) totalAssetStatsEl.textContent = `${totalAsset.toLocaleString()}원`;
 
-        // 이번 달 통계용 (가계부 탭)
-        const monthlyIncome = state.transactions.filter(t => t.type === 'income' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
-        const monthlyBaseExpense = state.transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
+        // --- 이번 달 통계용 (커스텀 날짜 범위 적용) ---
+        const rangeTrans = state.transactions.filter(t => t.date >= range.start && t.date <= range.end);
+
+        const monthlyIncome = rangeTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const monthlyBaseExpense = rangeTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
         const monthlyExpense = monthlyBaseExpense + currentMonthDetailExpense;
-        const monthlySavings = state.transactions.filter(t => t.type === 'savings' && t.date.startsWith(currentMonth)).reduce((sum, t) => sum + t.amount, 0);
+        const monthlySavings = rangeTrans.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('acc-monthly-income').textContent = `${monthlyIncome.toLocaleString()}원`;
         document.getElementById('acc-monthly-expense').textContent = `${monthlyExpense.toLocaleString()}원`;
@@ -289,6 +307,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const assetEl = document.getElementById('acc-total-asset');
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
         if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
+
+        // 집계 기간 툴팁 표시
+        const calendarTitle = document.querySelector('#account-calendar .calendar-header h3');
+        if (calendarTitle) calendarTitle.title = `집계 기간: ${range.start} ~ ${range.end}`;
 
         updateCharts(totalExpense, totalSavings, totalDetailPersonal, totalDetailShared);
     }
@@ -455,7 +477,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function changeMonth(type, delta) {
         let [y, m] = state.viewDates[type].split('-').map(Number);
-        m += delta; i = 0; if (m > 12) { y++; m = 1; } if (m < 1) { y--; m = 12; }
+        m += delta;
+        if (m > 12) { y++; m = 1; }
+        if (m < 1) { y--; m = 12; }
         state.viewDates[type] = `${y}-${String(m).padStart(2, '0')}`;
         saveState(); refreshCalendars(); renderCategoryGrids();
     }
@@ -1373,5 +1397,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // Initial Render
+    // 시작일(급여일) 설정 이벤트
+    const salaryDayInput = document.getElementById('setting-salary-day');
+    if (salaryDayInput) {
+        salaryDayInput.value = state.salaryDay || 1; // 초기값 설정
+        salaryDayInput.onchange = (e) => {
+            let val = Number(e.target.value);
+            if (val < 1) val = 1;
+            if (val > 28) val = 28; // 29, 30, 31일은 달마다 달라지므로 최대 28일로 제한
+            e.target.value = val;
+            state.salaryDay = val;
+            saveState();
+            updateStats();
+        };
+    }
+
     refreshAllUI();
 });
