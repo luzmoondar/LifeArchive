@@ -953,6 +953,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             authOverlay.classList.remove('active');
             document.getElementById('btn-logout').style.display = 'block';
             document.getElementById('btn-reset-all').style.display = 'block';
+            document.getElementById('btn-delete-account').style.display = 'block';
             // 최초 로그인/세션 복원 시에만 클라우드 데이터 불러오기
             // TOKEN_REFRESHED 시에는 달력이 이번 달로 튀지 않도록 스킵
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
@@ -963,6 +964,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             authOverlay.classList.add('active');
             document.getElementById('btn-logout').style.display = 'none';
             document.getElementById('btn-reset-all').style.display = 'none';
+            document.getElementById('btn-delete-account').style.display = 'none';
             // 로그아웃 시 상태 초기화 (원하는 경우)
             resetState();
             refreshAllUI();
@@ -976,6 +978,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             else {
                 console.log("👋 로그아웃 되었습니다.");
                 location.reload(); // 로그아웃 후 페이지 새로고침으로 깔끔하게 초기화
+            }
+        }
+    };
+
+    document.getElementById('btn-delete-account').onclick = async () => {
+        if (confirm('정말 탈퇴하시겠습니까?\n데이터베이스에 저장된 모든 기록이 즉시 삭제되며 복구할 수 없습니다.')) {
+            try {
+                // 1. 데이터베이스에서 내용 삭제
+                const { error: deleteError } = await supabaseClient
+                    .from('life')
+                    .delete()
+                    .eq('user_id', currentUser.id);
+
+                if (deleteError) throw deleteError;
+
+                // 2. 로그아웃 (이후 로그인/회원가입 창으로 이동됨)
+                await supabaseClient.auth.signOut();
+
+                // 3. 로컬 데이터 초기화 및 새로고침
+                localStorage.removeItem('life-state');
+                alert('회원탈퇴 및 데이터 삭제 처리가 완료되었습니다.');
+                location.reload();
+            } catch (e) {
+                console.error("데이터 삭제 실패:", e);
+                alert("삭제 처리 중 에러가 발생했습니다.");
             }
         }
     };
