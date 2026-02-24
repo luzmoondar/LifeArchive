@@ -76,8 +76,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             // 현재 로그인한 사용자의 데이터 중 가장 최근 것을 가져옵니다.
             const { data, error } = await supabaseClient
-                .from('life')
-                .select('content')
+                .from('user_categories')
+                .select('expense')
                 .eq('user_id', currentUser.id)
                 .order('id', { ascending: false })
                 .limit(1);
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (error) throw error;
 
             if (data && data.length > 0) {
-                const cloudData = JSON.parse(data[0].content);
+                const cloudData = JSON.parse(data[0].expense);
                 // 기존 데이터와 합칠 때 detailData 구조가 빠지지 않도록 보장
                 state = {
                     ...state,
@@ -121,9 +121,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!currentUser) return;
         try {
             const { error } = await supabaseClient
-                .from('life')
+                .from('user_categories')
                 .insert([{
-                    content: JSON.stringify(state),
+                    expense: JSON.stringify(state),
                     user_id: currentUser.id
                 }]);
 
@@ -142,6 +142,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderWeddingCosts();
         renderWeddingGifts();
         updateStats();
+    }
+
+    // 보안을 위한 문자열 이스케이프 함수 (XSS 방어)
+    function safeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     window.addWeddingGiftRow = () => {
@@ -1138,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const headerHtml = `
                 <div class="subsection-header" style="background: #ffffff; padding: 0.6rem 1rem 0 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
-                    <input type="text" class="group-title-edit" value="${group.title || ''}" placeholder="카테고리명 입력" 
+                    <input type="text" class="group-title-edit" value="${safeHTML(group.title) || ''}" placeholder="카테고리명 입력" 
                         style="font-weight:700; color:#1e293b; border:none; background:transparent; font-size:0.95rem; padding:0; width: auto; flex-grow:1;">
                     <button class="delete-group-btn" title="카테고리 삭제" style="background:none; border:none; cursor:pointer; color:#fca5a5; font-size: 0.85rem;">삭제</button>
                 </div>
@@ -1197,9 +1208,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             group.items.forEach((item, idx) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><input type="text" class="item-detail" value="${item.detail || ''}" placeholder="내용 입력"></td>
+                    <td><input type="text" class="item-detail" value="${safeHTML(item.detail) || ''}" placeholder="내용 입력"></td>
                     <td><input type="number" class="item-amount" value="${item.amount || ''}" placeholder="금액"></td>
-                    <td><input type="text" class="item-memo" value="${item.memo || ''}" placeholder="비고"></td>
+                    <td><input type="text" class="item-memo" value="${safeHTML(item.memo) || ''}" placeholder="비고"></td>
                     <td class="row-action-cell"><button class="remove-row-btn">✕</button></td>
                 `;
 
@@ -1249,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="text-align:center; font-size:0.8rem; color:#64748b;">${idx + 1}</td>
-                <td><input type="text" class="gift-name" value="${item.name || ''}" placeholder="이름"></td>
+                <td><input type="text" class="gift-name" value="${safeHTML(item.name) || ''}" placeholder="이름"></td>
                 <td><input type="number" class="gift-received" value="${item.received || ''}" placeholder="0"></td>
                 <td><input type="number" class="gift-paid" value="${item.paid || ''}" placeholder="0"></td>
                 <td>
