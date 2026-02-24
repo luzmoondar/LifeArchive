@@ -34,7 +34,7 @@
                     <button class="tab-btn" data-tab="account">가계부</button>
                     <button class="tab-btn" data-tab="detail">상세가계부</button>
                     <button class="tab-btn" data-tab="monthly">생활먼슬리</button>
-                    <button class="tab-btn" data-tab="wedding">축의금</button>
+                    <button class="tab-btn" data-tab="wedding">결혼식</button>
                 </nav>
             </header>
 
@@ -283,29 +283,63 @@
                     </div>
                 </section>
 
-                <!-- Wedding Gift Tab -->
+                <!-- Wedding Tab (Consolidated) -->
                 <section id="wedding" class="tab-content">
                     <div class="detail-card">
                         <div class="wedding-top-summary"
                             style="padding: 1.5rem 2rem; background: #f7f7ff; border-bottom: 1px solid var(--border);">
                             <div class="title-with-summary"
                                 style="display: flex; align-items: center; justify-content: space-between;">
-                                <h4 style="margin:0;">축의금 전체 요약</h4>
-                                <div class="wedding-summary">
-                                    <span>받은 총액: <strong id="wedding-received-total"
-                                            style="color: var(--primary);">0원</strong></span>
-                                    <span>내가 낸 총액: <strong id="wedding-paid-total"
+                                <h4 style="margin:0;">결혼식 정산 요약</h4>
+                                <div class="wedding-summary" style="display: flex; gap: 2rem; align-items: center;">
+                                    <span>비용 지출: <strong id="wedding-expense-total-top"
                                             style="color: var(--danger);">0원</strong></span>
+                                    <span>축의 받은금액: <strong id="wedding-received-total"
+                                            style="color: var(--primary);">0원</strong></span>
+                                    <span>축의 낸금액: <strong id="wedding-paid-total"
+                                            style="color: #64748b;">0원</strong></span>
+                                    <div style="width: 1px; height: 16px; background: #e2e8f0;"></div>
+                                    <span><strong>최종 정산:</strong> <strong id="wedding-net-balance"
+                                            style="font-size: 1.1rem;">0원</strong></span>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="detail-grid" style="grid-template-columns: 1fr;">
-                            <!-- Consolidated Wedding Table -->
+                        <div class="detail-grid">
+                            <!-- Left: Wedding Expenses Summary -->
                             <div class="section-card">
                                 <div class="section-header">
-                                    <h4>축의금 상세 내역</h4>
-                                    <button class="add-btn" id="add-wedding-row">+</button>
+                                    <h4>결혼식 비용 총정리</h4>
+                                    <button class="add-btn" id="add-wedding-expense-row">+</button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="detail-table wedding-expense-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 40px;">No.</th>
+                                                <th>항목</th>
+                                                <th>금액</th>
+                                                <th>메모</th>
+                                                <th style="width: 35px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="wedding-expense-table-body"></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="total-label">지출 합계</td>
+                                                <td class="total-amount" id="wedding-expense-footer">0원</td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Right: Wedding Gifts -->
+                            <div class="section-card">
+                                <div class="section-header">
+                                    <h4>축의금 내역</h4>
+                                    <button class="add-btn" id="add-wedding-gift-row">+</button>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="detail-table wedding-table">
@@ -316,9 +350,18 @@
                                                 <th>받은 금액</th>
                                                 <th>낸 금액</th>
                                                 <th style="width: 45px;">참석</th>
+                                                <th style="width: 35px;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="wedding-table-body"></tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="2" class="total-label">축의 합계</td>
+                                                <td class="total-amount" id="wedding-received-footer">0원</td>
+                                                <td class="total-amount" id="wedding-paid-footer">0원</td>
+                                                <td colspan="2"></td>
+                                            </tr>
+                                        </tfoot>
                                     </table>
                                 </div>
                             </div>
