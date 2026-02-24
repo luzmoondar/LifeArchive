@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Supabase Configuration
-    const SUPABASE_URL = 'https://rqdwpnddynwjgekopiea.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxZHdwbmRkeW53amdla29waWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MzQ3MzcsImV4cCI6MjA4NjQxMDczN30.i431TCpDpYQ6wObMnr62iRiqF6tyDj5hRGk73ZPFe4Y';
+    const SUPABASE_URL = 'https://ljaemqxownqhnrwuhljr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYWVtcXhvd25xaG5yd3VobGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0OTk3NDMsImV4cCI6MjA4NzA3NTc0M30.1HET03hneFsQ-FryAhdUpsOLYy5hvx1CF44_wluD8us';
 
     // Supabase 클라이언트 초기화
     const { createClient } = supabase;
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             // 여러 컬럼을 한 번에 조회
             const { data, error } = await supabaseClient
-                .from('user_categories')
+                .from('life')
                 .select('expense, income, savings')
                 .eq('user_id', currentUser.id)
                 .maybeSingle();
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 현재 테이블 구조에 맞춰 expense, income, savings 컬럼에 각각 데이터 분산 저장
             // (기존의 전체 state를 expense에 넣되, 구조 상 가시성을 위해 나중에 분리 가능)
             const { error } = await supabaseClient
-                .from('user_categories')
+                .from('life')
                 .upsert(
                     {
                         user_id: currentUser.id,
