@@ -1678,105 +1678,232 @@ body {
     letter-spacing: -0.01em;
 }
 
-/* Wedding Table Specifics */
-.wedding-expense-table input[type="text"],
-.wedding-expense-table input[type="number"],
-.wedding-table input[type="text"],
-.wedding-table input[type="number"] {
-    width: 100%;
-    padding: 0.4rem 0.3rem;
-    /* 패딩 더 축소 */
-    border: 1px solid transparent;
-    border-radius: 0.5rem;
-    background: transparent;
-    font-family: inherit;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-    line-height: 1.5;
-    /* 줄 높이 표준화 */
-    display: block;
-    margin: 0;
-}
-
-.wedding-expense-table td,
-.wedding-table td {
-    vertical-align: middle;
-    padding: 0.3rem 0.1rem;
-    /* 셀 패딩 최소화 */
-}
-
-/* 특정 열 너비 고정으로 스크롤 방지 */
-.wedding-expense-table th:nth-child(1),
-.wedding-table th:nth-child(1) {
-    width: 35px !important;
-}
-
-/* No. */
-.wedding-expense-table th:nth-child(3),
-.wedding-table th:nth-child(3) {
-    width: 85px !important;
-}
-
-/* 금액/받은금액 */
-.wedding-table th:nth-child(4) {
-    width: 85px !important;
-}
-
-/* 낸 금액 */
-.wedding-table th:nth-child(5) {
-    width: 40px !important;
-}
-
-/* 참석 */
-.wedding-expense-table th:nth-child(5),
-.wedding-table th:nth-child(6) {
-    width: 30px !important;
-}
-
-/* 삭제 */
-
-/* 요약 영역 정렬 개선 */
-.wedding-summary {
+/* Wedding Layout Improvements */
+.wedding-top-nav {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
+    padding: 1.2rem 2rem;
+    background: #f7f7ff;
+    border-bottom: 1px solid var(--border);
+}
+
+.wedding-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    padding: 1.5rem;
 }
 
-.wedding-summary span {
+@media (max-width: 1024px) {
+    .wedding-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.wedding-cost-subsection {
+    margin-bottom: 2rem;
+}
+
+.wedding-cost-subsection:last-child {
+    margin-bottom: 0;
+}
+
+
+
+.wedding-tab-title {
+    margin: 1.5rem 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
     display: flex;
-    align-items: baseline;
-    /* 바닥 글자 라인을 일치시킴 */
+    align-items: center;
     gap: 0.5rem;
 }
 
-.wedding-summary strong {
-    font-size: 1.15rem;
-    /* 강조 숫자 크기 살짝 키움 */
-    font-weight: 700;
-    line-height: 1;
+
+/* Wedding Table Modernized Styling (Image Match) */
+.wedding-expense-table,
+.wedding-gift-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    width: 100%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
-/* 참석 체크박스 중앙 정렬 및 크기 조정 */
+.wedding-expense-table th,
+.wedding-gift-table th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.8rem 0.5rem;
+    border-bottom: 2px solid #eef2f6;
+    border-right: 1px solid #eef2f6;
+    text-align: center;
+}
+
+.wedding-expense-table th:last-child,
+.wedding-gift-table th:last-child {
+    border-right: none;
+}
+
+.wedding-expense-table td,
+.wedding-gift-table td {
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    padding: 0;
+    vertical-align: middle;
+    height: 35px;
+    /* 상세 가계부와 높이 통일 */
+}
+
+.wedding-expense-table td:last-child,
+.wedding-gift-table td:last-child {
+    border-right: none;
+}
+
+.wedding-expense-table tr:last-child td,
+.wedding-gift-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wedding-expense-table input,
+.wedding-gift-table input,
+.group-title-input {
+    width: 100%;
+    height: 100%;
+    /* td 높이에 맞춤 */
+    padding: 0 0.75rem;
+    /* 상세 가계부와 패딩 통일 */
+    border: none !important;
+    background: transparent !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem !important;
+    color: #334155;
+    outline: none;
+    transition: background 0.2s;
+    display: block;
+}
+
+.wedding-expense-table input::placeholder,
+.wedding-gift-table input::placeholder,
+.group-title-input::placeholder {
+    color: #cbd5e1;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.wedding-expense-table input:focus,
+.wedding-gift-table input:focus {
+    background: rgba(99, 102, 241, 0.03) !important;
+}
+
+/* Item Group Column (Background for first column) */
+.group-title-input {
+    background: #f8fafc !important;
+    height: 100%;
+    resize: none;
+    text-align: center;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* NO Column Styling */
+.wedding-gift-table td:first-child {
+    background: #f8fafc;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    width: 45px;
+}
+
+/* Summary Area styling */
+.wedding-top-summary {
+    border-radius: 1rem;
+    margin: 1rem;
+    background: #fff;
+    border: 1px solid #eef2f6;
+    box-shadow: var(--shadow-sm);
+}
+
+.wedding-summary span {
+    font-size: 0.95rem;
+    color: #64748b;
+}
+
+.wedding-summary strong {
+    color: #1e293b;
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+/* Checkbox alignment */
 .wedding-attended-cell {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 1.5rem;
+    height: 100%;
 }
 
-.wedding-table input[type="checkbox"] {
-    width: 15px;
-    height: 15px;
-    margin: 0;
+.wedding-attended-cell input[type="checkbox"] {
+    width: 1.15rem;
+    height: 1.15rem;
     cursor: pointer;
     accent-color: var(--primary);
-    /* 체크 시 색상 일관성 */
+    border-radius: 0.3rem;
 }
 
-/* 결혼식 탭 테이블 액션 셀 공통 스타일 */
-.wedding-expense-table .row-action-cell,
-.wedding-table .row-action-cell {
-    text-align: center;
-    vertical-align: middle;
-    width: 40px;
-    padding: 0;
+
+/* Wedding Card Bricks Styling */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.add-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.add-btn:hover {
+    transform: scale(1.1);
+    background: #4f46e5;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.group-title-edit:focus {
+    background: rgba(99, 102, 241, 0.05) !important;
+    border-radius: 4px;
+}
+
+.add-row-mini-btn:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+.delete-group-btn:hover {
+    color: #ef4444 !important;
 }

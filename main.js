@@ -27,7 +27,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         detailData: {}, // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
         pinnedItems: { personal: [], shared: [] }, // 모든 달에 상단 고정되는 항목
-        weddingData: [] // 축의금 데이터 [{ id, name, received, paid, attended }]
+        weddingCosts: [
+            { id: 'group1', title: '', items: [] },
+            { id: 'group2', title: '', items: [] },
+            { id: 'group3', title: '', items: [] }
+        ],
+        weddingGifts: [] // [{ id, name, received, isPartner, hasMeal }]
     };
 
     // 로컬 데이터 먼저 불러오기
@@ -51,7 +56,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             personal: parsed.pinnedItems?.personal || [],
             shared: parsed.pinnedItems?.shared || []
         };
-        state.weddingData = parsed.weddingData || [];
+        // Wedding data migration/init
+        state.weddingCosts = parsed.weddingCosts || [
+            { id: 'group1', title: '', items: [] },
+            { id: 'group2', title: '', items: [] },
+            { id: 'group3', title: '', items: [] }
+        ];
+        state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
         state.viewDates = {
             account: new Date().toISOString().slice(0, 7),
             life: new Date().toISOString().slice(0, 7),
@@ -128,10 +139,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderIssues();
         renderStockList();
         renderDetailTables();
-        renderWeddingTable();
-        renderWeddingExpensesTable();
+        renderWeddingCosts();
+        renderWeddingGifts();
         updateStats();
     }
+
+    window.addWeddingGiftRow = () => {
+        state.weddingGifts.push({ id: crypto.randomUUID(), name: '', received: 0, isPartner: false, hasMeal: false });
+        saveState();
+        renderWeddingGifts();
+    };
 
     // Tab Navigation
     const tabs = document.querySelectorAll('.tab-btn');
@@ -470,56 +487,86 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
-        if (d && n && a > 0) { state.transactions.push({ id: Date.now(), date: d, name: n, cat: currentModalTarget.category, amount: a, type: currentModalTarget.type }); saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); document.getElementById('modal-name').value = ''; document.getElementById('modal-amount').value = ''; }
+        if (d && n && a > 0) {
+            if (currentModalTarget.type === 'wedding') {
+                const group = state.weddingCosts.find(g => g.id === currentModalTarget.category);
+                if (group) {
+                    group.items.push({ id: crypto.randomUUID(), detail: n, amount: a, memo: '' });
+                }
+            } else {
+                state.transactions.push({ id: Date.now(), date: d, name: n, cat: currentModalTarget.category, amount: a, type: currentModalTarget.type });
+            }
+            saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); renderWeddingCosts(); updateWeddingSummary(); document.getElementById('modal-name').value = ''; document.getElementById('modal-amount').value = '';
+        }
     };
 
     document.getElementById('btn-rename-cat').onclick = () => {
-        const oldName = currentModalTarget.category;
+        const oldId = currentModalTarget.category;
         const type = currentModalTarget.type;
-        const newName = prompt('새 카테고리 이름을 입력하세요:', oldName);
 
+        if (type === 'wedding') {
+            const group = state.weddingCosts.find(g => g.id === oldId);
+            const newName = prompt('항목 이름을 입력하세요:', group.title);
+            if (newName && newName !== group.title) {
+                group.title = newName;
+                document.getElementById('modal-title').textContent = `${newName} - 내역 추가`;
+                saveState(); renderWeddingCosts();
+            }
+            return;
+        }
+
+        const oldName = oldId;
+        const newName = prompt('새 카테고리 이름을 입력하세요:', oldName);
         if (newName && newName !== oldName) {
             if (state.categories[type].includes(newName)) {
                 alert('이미 존재하는 카테고리 이름입니다.');
                 return;
             }
-
-            // 1. 카테고리 목록 업데이트
             const idx = state.categories[type].indexOf(oldName);
-            if (idx !== -1) {
-                state.categories[type][idx] = newName;
-            }
-
-            // 2. 관련 내역들의 카테고리명 일괄 변경
-            state.transactions.forEach(t => {
-                if (t.type === type && t.cat === oldName) {
-                    t.cat = newName;
-                }
-            });
-
-            // 3. 상태 업데이트 및 UI 갱신
+            if (idx !== -1) state.categories[type][idx] = newName;
+            state.transactions.forEach(t => { if (t.type === type && t.cat === oldName) t.cat = newName; });
             currentModalTarget.category = newName;
             document.getElementById('modal-title').textContent = `${newName} - 내역 추가`;
-            saveState();
-            refreshAllUI();
-            alert('카테고리 이름이 변경되었습니다.');
+            saveState(); refreshAllUI();
         }
     };
 
     function renderModalHistory() {
         const list = document.getElementById('modal-entry-list');
         list.innerHTML = '';
+
+        if (currentModalTarget.type === 'wedding') {
+            const group = state.weddingCosts.find(g => g.id === currentModalTarget.category);
+            if (!group) return;
+            group.items.forEach((entry, idx) => {
+                const item = document.createElement('div'); item.className = 'mini-entry';
+                item.innerHTML = `
+                    <div class="entry-info">
+                        <strong>${entry.detail || '제목 없음'}</strong>
+                        <span class="entry-date">${entry.memo || ''}</span>
+                    </div>
+                    <div class="entry-actions">
+                        <span class="amount-text">${(entry.amount || 0).toLocaleString()}원</span>
+                        <button class="delete-btn" title="삭제">&times;</button>
+                    </div>
+                `;
+                item.querySelector('.delete-btn').onclick = () => {
+                    if (confirm('이 내역을 삭제하시겠습니까?')) {
+                        group.items.splice(idx, 1);
+                        saveState(); renderModalHistory(); renderWeddingCosts(); updateWeddingSummary();
+                    }
+                };
+                list.appendChild(item);
+            });
+            return;
+        }
+
         const entries = state.transactions.filter(t => {
             const isMatchCat = (t.cat === currentModalTarget.category);
             const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
             const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
             const isMonthMatch = t.date.startsWith(state.viewDates.account);
-
-            // 자산(asset)인 경우 월 필터를 적용하지 않고 전체 내역을 보여줌
-            if (currentModalTarget.type === 'asset') {
-                return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
-            }
-
+            if (currentModalTarget.type === 'asset') return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
             return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isMonthMatch;
         });
         entries.sort((a, b) => b.id - a.id).forEach(entry => {
@@ -1075,172 +1122,185 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Wedding Tab Logic ---
 
     // 1. 결혼식 비용 (지출) 렌더링
-    function renderWeddingExpensesTable() {
-        const body = document.getElementById('wedding-expense-table-body');
-        if (!body) return;
-        body.innerHTML = '';
+    function renderWeddingCosts() {
+        const container = document.getElementById('wedding-costs-wrapper');
+        if (!container) return;
+        container.innerHTML = '';
 
-        if (!state.weddingExpenses) state.weddingExpenses = [];
-        // 최소 20행 보장
-        let stateChanged = false;
-        while (state.weddingExpenses.length < 20) {
-            state.weddingExpenses.push({
-                id: 'we-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                item: '', amount: 0, memo: ''
-            });
-            stateChanged = true;
-        }
-        if (stateChanged) saveToLocal();
+        state.weddingCosts.forEach((group, groupIdx) => {
+            const subsection = document.createElement('div');
+            subsection.className = 'wedding-cost-subsection';
 
-        state.weddingExpenses.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
-                <td><input type="text" class="expense-item" value="${item.item || ''}" placeholder="항목"></td>
-                <td><input type="number" class="expense-amount" value="${item.amount || ''}" placeholder="0"></td>
-                <td><input type="text" class="expense-memo" value="${item.memo || ''}" placeholder="메모"></td>
-                <td class="row-action-cell">
-                    <button class="remove-row-btn" title="삭제">✕</button>
-                </td>
+            // Ensure some empty items
+            if (group.items.length === 0) {
+                for (let i = 0; i < 5; i++) group.items.push({ id: crypto.randomUUID(), detail: '', amount: 0, memo: '' });
+            }
+
+            const headerHtml = `
+                <div class="subsection-header" style="background: #ffffff; padding: 0.6rem 1rem 0 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <input type="text" class="group-title-edit" value="${group.title || ''}" placeholder="카테고리명 입력" 
+                        style="font-weight:700; color:#1e293b; border:none; background:transparent; font-size:0.95rem; padding:0; width: auto; flex-grow:1;">
+                    <button class="delete-group-btn" title="카테고리 삭제" style="background:none; border:none; cursor:pointer; color:#fca5a5; font-size: 0.85rem;">삭제</button>
+                </div>
             `;
 
-            const itemInput = tr.querySelector('.expense-item');
-            const amountInput = tr.querySelector('.expense-amount');
-            const memoInput = tr.querySelector('.expense-memo');
-            const removeBtn = tr.querySelector('.remove-row-btn');
+            const tableHtml = `
+                <div class="table-responsive">
+                    <table class="detail-table wedding-expense-table" style="border:none; border-radius:0; box-shadow:none;">
+                        <thead>
+                            <tr>
+                                <th>내용</th>
+                                <th style="width: 100px;">금액</th>
+                                <th style="width: 130px;">비고</th>
+                                <th style="width: 35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="group-body"></tbody>
+                        <tfoot style="background: #fdfdfd; border-top: 1px solid #eef2f6;">
+                            <tr>
+                                <td class="total-label" style="background:transparent; border:none;">소계</td>
+                                <td class="total-amount group-total" style="text-align:left; padding-left:0.6rem; background:transparent; border:none;">0원</td>
+                                <td colspan="2" style="background:transparent; border:none;"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div style="padding: 0.5rem 0 1rem 0; border-bottom: 1px dashed #eef2f6; margin-bottom: 1.5rem;">
+                    <button class="add-row-mini-btn add-expense-row-btn" style="width: 100%; font-size: 0.85rem; background:none; border:none; color:var(--primary); font-weight:700; cursor:pointer;">+ 항목 추가</button>
+                </div>
+            `;
 
-            itemInput.oninput = (e) => { item.item = e.target.value; saveToLocal(); };
-            amountInput.oninput = (e) => { item.amount = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
-            memoInput.oninput = (e) => { item.memo = e.target.value; saveToLocal(); };
-            removeBtn.onclick = () => {
-                if (confirm('이 비용 항목을 삭제하시겠습니까?')) {
-                    state.weddingExpenses = state.weddingExpenses.filter(d => d.id !== item.id);
+            subsection.innerHTML = headerHtml + tableHtml;
+            const body = subsection.querySelector('.group-body');
+            const groupTotalEl = subsection.querySelector('.group-total');
+            const titleInput = subsection.querySelector('.group-title-edit');
+            const addRowBtn = subsection.querySelector('.add-expense-row-btn');
+            const deleteGroupBtn = subsection.querySelector('.delete-group-btn');
+
+            titleInput.oninput = (e) => { group.title = e.target.value; saveToLocal(); };
+
+            addRowBtn.onclick = () => {
+                group.items.push({ id: crypto.randomUUID(), detail: '', amount: 0, memo: '' });
+                saveState();
+                renderWeddingCosts();
+            };
+
+            deleteGroupBtn.onclick = () => {
+                if (confirm(`'${group.title || '이 카테고리'}' 항목 전체를 삭제하시겠습니까?`)) {
+                    state.weddingCosts.splice(groupIdx, 1);
                     saveState();
-                    renderWeddingExpensesTable();
+                    renderWeddingCosts();
+                    updateWeddingSummary();
                 }
             };
-            body.appendChild(tr);
+
+            group.items.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="item-detail" value="${item.detail || ''}" placeholder="내용 입력"></td>
+                    <td><input type="number" class="item-amount" value="${item.amount || ''}" placeholder="금액"></td>
+                    <td><input type="text" class="item-memo" value="${item.memo || ''}" placeholder="비고"></td>
+                    <td class="row-action-cell"><button class="remove-row-btn">✕</button></td>
+                `;
+
+                tr.querySelector('.item-detail').oninput = (e) => { item.detail = e.target.value; saveToLocal(); };
+                tr.querySelector('.item-amount').oninput = (e) => {
+                    item.amount = parseInt(e.target.value) || 0;
+                    saveToLocal();
+                    updateWeddingSummary();
+                    calculateGroupTotal(group, groupTotalEl);
+                };
+                tr.querySelector('.item-memo').oninput = (e) => { item.memo = e.target.value; saveToLocal(); };
+                tr.querySelector('.remove-row-btn').onclick = () => {
+                    group.items.splice(idx, 1);
+                    saveState();
+                    renderWeddingCosts();
+                };
+
+                body.appendChild(tr);
+            });
+
+            calculateGroupTotal(group, groupTotalEl);
+            container.appendChild(subsection);
         });
-        updateWeddingTotals();
     }
 
-    // 2. 축의금 (수입) 렌더링
-    function renderWeddingTable() {
-        const body = document.getElementById('wedding-table-body');
+    function calculateGroupTotal(group, el) {
+        const total = group.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+        if (el) el.textContent = `${total.toLocaleString()}원`;
+    }
+
+    window.addWeddingCostGroup = () => {
+        state.weddingCosts.push({ id: crypto.randomUUID(), title: '새 카테고리', items: [] });
+        saveState();
+        renderWeddingCosts();
+    };
+
+    function renderWeddingGifts() {
+        const body = document.getElementById('wedding-gift-table-body');
         if (!body) return;
         body.innerHTML = '';
 
-        // 최소 20개 데이터 보장
-        let stateChanged = false;
-        if (!state.weddingData) state.weddingData = [];
-        while (state.weddingData.length < 20) {
-            state.weddingData.push({
-                id: 'wd-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                name: '', received: 0, paid: 0, attended: false
-            });
-            stateChanged = true;
+        while (state.weddingGifts.length < 20) {
+            state.weddingGifts.push({ id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
         }
-        if (stateChanged) saveToLocal();
 
-        const data = state.weddingData;
-
-        // 헬퍼: 행 생성
-        function createWeddingRow(item, index) {
+        state.weddingGifts.forEach((item, idx) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${index + 1}</td>
-                <td><input type="text" class="wedding-name" value="${item.name || ''}" placeholder="이름"></td>
-                <td><input type="number" class="wedding-received" value="${item.received || ''}" placeholder="0"></td>
-                <td><input type="number" class="wedding-paid" value="${item.paid || ''}" placeholder="0"></td>
+                <td style="text-align:center; font-size:0.8rem; color:#64748b;">${idx + 1}</td>
+                <td><input type="text" class="gift-name" value="${item.name || ''}" placeholder="이름"></td>
+                <td><input type="number" class="gift-received" value="${item.received || ''}" placeholder="0"></td>
+                <td><input type="number" class="gift-paid" value="${item.paid || ''}" placeholder="0"></td>
                 <td>
                     <div class="wedding-attended-cell">
-                        <input type="checkbox" class="wedding-attended" ${item.attended ? 'checked' : ''}>
+                        <input type="checkbox" class="is-attended" ${item.attended ? 'checked' : ''}>
                     </div>
                 </td>
-                <td class="row-action-cell">
-                    <button class="remove-row-btn" title="삭제">✕</button>
-                </td>
+                <td class="row-action-cell"><button class="remove-row-btn">✕</button></td>
             `;
 
-            const nameInput = tr.querySelector('.wedding-name');
-            const receivedInput = tr.querySelector('.wedding-received');
-            const paidInput = tr.querySelector('.wedding-paid');
-            const attendedInput = tr.querySelector('.wedding-attended');
-            const removeBtn = tr.querySelector('.remove-row-btn');
-
-            nameInput.oninput = (e) => { item.name = e.target.value; saveToLocal(); };
-            receivedInput.oninput = (e) => { item.received = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
-            paidInput.oninput = (e) => { item.paid = parseInt(e.target.value) || 0; saveToLocal(); updateWeddingTotals(); };
-            attendedInput.onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
-
-            removeBtn.onclick = () => {
-                if (confirm('이 항목을 삭제하시겠습니까?')) {
-                    state.weddingData = state.weddingData.filter(d => d.id !== item.id);
-                    saveState();
-                    renderWeddingTable();
-                }
+            tr.querySelector('.gift-name').oninput = (e) => { item.name = e.target.value; saveToLocal(); };
+            tr.querySelector('.gift-received').oninput = (e) => {
+                item.received = parseInt(e.target.value) || 0;
+                saveToLocal();
+                updateWeddingSummary();
+            };
+            tr.querySelector('.gift-paid').oninput = (e) => {
+                item.paid = parseInt(e.target.value) || 0;
+                saveToLocal();
+                updateWeddingSummary();
+            };
+            tr.querySelector('.is-attended').onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
+            tr.querySelector('.remove-row-btn').onclick = () => {
+                state.weddingGifts.splice(idx, 1);
+                saveState();
+                renderWeddingGifts();
             };
 
-            return tr;
-        }
-
-        data.forEach((item, i) => body.appendChild(createWeddingRow(item, i)));
-        updateWeddingTotals();
+            body.appendChild(tr);
+        });
+        updateWeddingSummary();
     }
 
-    function updateWeddingTotals() {
-        // 비용 합계
-        const expenses = state.weddingExpenses || [];
-        const totalExpense = expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+    function updateWeddingSummary() {
+        const totalExp = state.weddingCosts.reduce((sum, g) => sum + g.items.reduce((s, i) => s + (i.amount || 0), 0), 0);
+        const totalRec = state.weddingGifts.reduce((sum, i) => sum + (i.received || 0), 0);
+        const totalPaid = state.weddingGifts.reduce((sum, i) => sum + (i.paid || 0), 0);
 
-        // 축의금 합계
-        const gifts = state.weddingData || [];
-        const totalReceived = gifts.reduce((sum, item) => sum + (item.received || 0), 0);
-        const totalPaid = gifts.reduce((sum, item) => sum + (item.paid || 0), 0);
+        const expTop = document.getElementById('wedding-expense-total-top');
+        const recTop = document.getElementById('wedding-received-total');
+        if (expTop) expTop.textContent = `${totalExp.toLocaleString()}원`;
+        if (recTop) recTop.textContent = `${totalRec.toLocaleString()}원`;
 
-        // 상단 요약 업데이트
-        const elExpTop = document.getElementById('wedding-expense-total-top');
-        const elRecTop = document.getElementById('wedding-received-total');
-        const elPaidTop = document.getElementById('wedding-paid-total');
-        const elNetBalance = document.getElementById('wedding-net-balance');
-
-        if (elExpTop) elExpTop.textContent = `${totalExpense.toLocaleString()}원`;
-        if (elRecTop) elRecTop.textContent = `${totalReceived.toLocaleString()}원`;
-        if (elPaidTop) elPaidTop.textContent = `${totalPaid.toLocaleString()}원`;
-
-        if (elNetBalance) {
-            const net = totalReceived - totalExpense;
-            elNetBalance.textContent = `${net.toLocaleString()}원`;
-            elNetBalance.style.color = net >= 0 ? 'var(--primary)' : 'var(--danger)';
-        }
-
-        // 각 테이블 푸터 합계 업데이트
-        const footerExp = document.getElementById('wedding-expense-footer');
-        const footerRec = document.getElementById('wedding-received-footer');
-        const footerPaid = document.getElementById('wedding-paid-footer');
-
-        if (footerExp) footerExp.textContent = `${totalExpense.toLocaleString()}원`;
-        if (footerRec) footerRec.textContent = `${totalReceived.toLocaleString()}원`;
-        if (footerPaid) footerPaid.textContent = `${totalPaid.toLocaleString()}원`;
+        const receivedFooter = document.getElementById('wedding-gifts-received-footer');
+        const paidFooter = document.getElementById('wedding-gifts-paid-footer');
+        if (receivedFooter) receivedFooter.textContent = `${totalRec.toLocaleString()}원`;
+        if (paidFooter) paidFooter.textContent = `${totalPaid.toLocaleString()}원`;
     }
 
-    // 행 추가 버튼 이벤트
-    if (document.getElementById('add-wedding-expense-row')) {
-        document.getElementById('add-wedding-expense-row').onclick = () => {
-            if (!state.weddingExpenses) state.weddingExpenses = [];
-            state.weddingExpenses.push({ id: crypto.randomUUID(), item: '', amount: 0, memo: '' });
-            saveState();
-            renderWeddingExpensesTable();
-        };
-    }
-    if (document.getElementById('add-wedding-gift-row')) {
-        document.getElementById('add-wedding-gift-row').onclick = () => {
-            if (!state.weddingData) state.weddingData = [];
-            state.weddingData.push({ id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
-            saveState();
-            renderWeddingTable();
-        };
-    }
+    // Event listeners for wedding are now handled by window functions or inline onclicks in HTML
+
 
     // 전체 데이터 초기화 기능
     document.getElementById('btn-reset-all').onclick = async () => {
