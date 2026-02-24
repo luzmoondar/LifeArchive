@@ -32,9 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const end = `${y}-${String(m).padStart(2, '0')}-${new Date(y, m, 0).getDate()}`;
             return { start, end };
         } else {
-            // 그 외: 이전 달 salaryDay ~ 이번 달 salaryDay - 1
-            const startDate = new Date(y, m - 2, salaryDay);
-            const endDate = new Date(y, m - 1, salaryDay - 1);
+            // 이번 달 salaryDay ~ 다음 달 salaryDay - 1
+            const startDate = new Date(y, m - 1, salaryDay);
+            const endDate = new Date(y, m, salaryDay - 1);
             return {
                 start: startDate.toISOString().split('T')[0],
                 end: endDate.toISOString().split('T')[0]
