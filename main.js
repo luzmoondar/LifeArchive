@@ -916,8 +916,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td style="font-weight:600;">${item.item}</td>
                 <td>${item.qty}</td>
                 <td>${parseInt(item.amount || 0).toLocaleString()}원</td>
-                <td><button class="delete-stock-btn">삭제</button></td>
+                <td style="display: flex; gap: 4px;">
+                    <button class="edit-stock-btn">수정</button>
+                    <button class="delete-stock-btn">삭제</button>
+                </td>
             `;
+
+            tr.querySelector('.edit-stock-btn').onclick = () => {
+                const newItem = prompt('내용 수정:', item.item);
+                const newQty = prompt('수량 수정:', item.qty);
+                const newAmount = prompt('금액 수정:', item.amount || 0);
+
+                if (newItem !== null && newQty !== null && newAmount !== null) {
+                    const target = state.logs.find(l => l.id === item.id);
+                    if (target) {
+                        target.item = newItem;
+                        target.qty = newQty;
+                        target.amount = newAmount;
+                        saveState();
+                        renderStockList();
+                        refreshCalendars(); // 달력 내용도 변경될 수 있으므로 갱신
+                    }
+                }
+            };
 
             tr.querySelector('.delete-stock-btn').onclick = () => {
                 if (confirm('보유목록에서 이 항목을 삭제하시겠습니까?\n(달력 기록은 유지됩니다.)')) {

@@ -1397,6 +1397,23 @@ body {
     background: #fecaca;
 }
 
+.stock-table .edit-stock-btn {
+    background: #eef2ff;
+    color: var(--primary);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-right: 4px;
+}
+
+.stock-table .edit-stock-btn:hover {
+    background: #e0e7ff;
+}
+
 @media (max-width: 600px) {
 
     .stock-table th,
