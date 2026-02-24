@@ -152,10 +152,6 @@
                                     <h3>총저축</h3>
                                     <p class="amount" id="total-savings">0원</p>
                                 </div>
-                                <div class="summary-card asset">
-                                    <h3>총보유자산</h3>
-                                    <p class="amount" id="total-asset-stats">0원</p>
-                                </div>
                             </div>
                             <div class="charts-container">
                                 <div class="chart-box">
@@ -169,6 +165,22 @@
                                     <div class="chart-wrapper">
                                         <canvas id="savings-chart"></canvas>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Asset & Savings Maturity Section -->
+                            <div class="section-card mt-4" id="asset-management-section">
+                                <div class="section-header">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <h4 style="margin:0;">🏦 자산 및 만기 현황</h4>
+                                        <div class="total-asset-badge">
+                                            총 보유자산: <span id="total-asset-stats-new">0원</span>
+                                        </div>
+                                    </div>
+                                    <button class="add-btn" id="btn-add-savings" title="적금/예금 추가">+</button>
+                                </div>
+                                <div id="savings-list" class="savings-grid">
+                                    <!-- Savings items with gauge bars will be injected here -->
                                 </div>
                             </div>
                         </div>
@@ -466,6 +478,37 @@
                     <h5 class="section-title">📝 생활 기록</h5>
                     <div id="life-day-log-list" class="detailed-entry-list"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings Item Modal -->
+    <div id="savings-modal" class="modal-backdrop">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h4>적금/예금 기록</h4>
+                <button class="close-modal" id="close-savings-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>상품명</label>
+                    <input type="text" id="savings-name" placeholder="예: 청년희망적금">
+                </div>
+                <div class="form-group">
+                    <label>목표 금액</label>
+                    <input type="number" id="savings-target-amount" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>시작일</label>
+                    <input type="date" id="savings-start-date">
+                </div>
+                <div class="form-group">
+                    <label>만기일</label>
+                    <input type="date" id="savings-end-date">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-savings-item" class="primary-btn">저장하기</button>
             </div>
         </div>
     </div>

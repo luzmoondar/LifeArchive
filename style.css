@@ -10,6 +10,7 @@
     --danger: #ef4444;
     --warning: #f59e0b;
     --glass: rgba(255, 255, 255, 0.7);
+    --asset-orange: #ff7d0c;
 }
 
 * {
@@ -1975,4 +1976,131 @@ body {
 
 .delete-group-btn:hover {
     color: #ef4444 !important;
+}
+
+/* ===== Asset & Savings Maturity Section ===== */
+.total-asset-badge {
+    background: #fff7ed;
+    color: #ff7d0c;
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: 1px solid #ffedd5;
+}
+
+.savings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.savings-item-card {
+    background: #f8fafc;
+    border: 1px solid #e4e7ea;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.savings-item-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.savings-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4rem;
+}
+
+.savings-card-title h5 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+}
+
+.savings-card-amount {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0.25rem 0 0.75rem 0;
+}
+
+.savings-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.savings-card-actions button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+
+.savings-card-actions button:hover {
+    color: var(--danger);
+}
+
+.savings-date-info {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-bottom: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Gauge Bar */
+.gauge-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.gauge-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+    border-radius: 4px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 0;
+}
+
+.gauge-fill.completed {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.gauge-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-light);
+}
+
+.gauge-meta .days-left {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.gauge-meta .days-left.done {
+    color: var(--success);
+}
+
+.savings-empty-state {
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    width: 100%;
+    grid-column: 1 / -1;
 }
