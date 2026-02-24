@@ -679,11 +679,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Account Day Modal ---
+    const accDayModal = document.getElementById('acc-day-modal');
+    const accDayCloseBtn = document.querySelector('#acc-day-modal .close-modal');
+    if (accDayCloseBtn) {
+        accDayCloseBtn.onclick = () => accDayModal.classList.remove('active');
+    }
+
     function openAccountDayModal(date) {
-        const modal = document.getElementById('acc-day-modal');
         document.getElementById('acc-day-title').textContent = `${date} 상세 내역`;
         renderAccountDayContent(date);
-        modal.classList.add('active');
+        accDayModal.classList.add('active');
     }
 
     function renderAccountDayContent(date) {
@@ -944,7 +949,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             authOverlay.classList.remove('active');
             document.getElementById('btn-logout').style.display = 'block';
             document.getElementById('btn-reset-all').style.display = 'block';
-            loadFromCloud();
+            // 최초 로그인/세션 복원 시에만 클라우드 데이터 불러오기
+            // TOKEN_REFRESHED 시에는 달력이 이번 달로 튀지 않도록 스킵
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                loadFromCloud();
+            }
         } else {
             currentUser = null;
             authOverlay.classList.add('active');
