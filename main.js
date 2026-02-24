@@ -80,10 +80,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             const { data, error } = await supabaseClient
                 .from('user_categories')
                 .select('expense')
+                .eq('user_id', currentUser.id) // 필터 다시 추가
                 .limit(1)
                 .maybeSingle();
 
+            console.log("🔍 브라우저에 표시할 데이터 확인:", data);
             if (error) {
+                if (error.code === 'PGRST204' || error.message.includes('not found')) {
+                    console.error("🚨 테이블 인식 오류 발생! Supabase SQL Editor에서 [NOTIFY pgrst, 'reload schema';] 명령어를 실행하면 즉시 해결됩니다.");
+                }
                 console.error("❌ Supabase 데이터 조회 에러 상세:", error);
                 throw error;
             }
@@ -889,6 +894,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             refreshAllUI();
         }
     });
+
+    document.getElementById('btn-logout').onclick = async () => {
+        if (confirm('로그아웃 하시겠습니까?')) {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) console.error("로그아웃 실패:", error);
+            else {
+                console.log("👋 로그아웃 되었습니다.");
+                location.reload(); // 로그아웃 후 페이지 새로고침으로 깔끔하게 초기화
+            }
+        }
+    };
 
     function resetState() {
         state = {
