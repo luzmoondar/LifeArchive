@@ -1,16 +1,25 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Supabase Configuration
-    const SUPABASE_URL = 'https://ljaemqxownqhnrwuhljr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxqYWVtcXhvd25xaG5yd3VobGpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0OTk3NDMsImV4cCI6MjA4NzA3NTc0M30.1HET03hneFsQ-FryAhdUpsOLYy5hvx1CF44_wluD8us';
+    const SUPABASE_URL = 'https://rqdwpnddynwjgekopiea.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxZHdwbmRkeW53amdla29waWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4MzQ3MzcsImV4cCI6MjA4NjQxMDczN30.i431TCpDpYQ6wObMnr62iRiqF6tyDj5hRGk73ZPFe4Y';
 
     // Supabase 클라이언트 초기화
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
-    let isInitialLoading = false; // 동기화 중 저장을 방지하는 플래그
+    let isInitialLoading = false;
     const authOverlay = document.getElementById('auth-overlay');
     const authMsg = document.getElementById('auth-msg');
+
+    // 동기화 상태 표시 헬퍼
+    function setSyncStatus(status, message) {
+        const indicator = document.getElementById('sync-status-indicator');
+        if (!indicator) return;
+        indicator.className = 'sync-status ' + status;
+        indicator.innerHTML = `<span></span> ${message}`;
+        console.log(`[Sync Status] ${status.toUpperCase()}: ${message}`);
+    }
 
     // State Management
     let state = {
@@ -73,47 +82,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Supabase에서 데이터 불러오기
     async function loadFromCloud() {
-        if (!currentUser) return;
-        isInitialLoading = true; // 불러오는 동안 자동 저장 방지
+        if (!currentUser) {
+            setSyncStatus('offline', '로그인 필요');
+            return;
+        }
+        isInitialLoading = true;
+        setSyncStatus('loading', '데이터 불러오는 중...');
+
         try {
-            console.log("Supabase에서 데이터를 불러오는 중...");
+            // 여러 컬럼을 한 번에 조회
             const { data, error } = await supabaseClient
                 .from('user_categories')
-                .select('expense')
+                .select('expense, income, savings')
                 .eq('user_id', currentUser.id)
                 .maybeSingle();
 
-            console.log("🔍 브라우저에 표시할 데이터 확인:", data);
             if (error) {
-                if (error.code === 'PGRST204' || error.message.includes('not found')) {
-                    console.error("🚨 테이블 인식 오류 발생! Supabase SQL Editor에서 [NOTIFY pgrst, 'reload schema';] 명령어를 실행하면 즉시 해결됩니다.");
+                if (error.code === 'PGRST204') {
+                    setSyncStatus('error', '서버 점검 중 (SQL 실행 필요)');
+                } else {
+                    setSyncStatus('error', '연동 실패');
                 }
-                console.error("❌ Supabase 데이터 조회 에러 상세:", error);
                 throw error;
             }
 
-            if (data && data.expense) {
-                const cloudData = JSON.parse(data.expense);
-
-                // 클라우드 데이터를 우선적으로 적용하되, 로컬에만 있는 최신 날짜 정보 보존
+            if (data) {
+                // 각 컬럼에서 데이터를 파싱하여 state에 반영
+                const cloudExpense = data.expense ? JSON.parse(data.expense) : {};
+                // income, savings 컬럼은 현재 구조상 expense JSON 내부에 포함되어 있을 수 있으므로
+                // 전체를 병합하는 방식으로 처리합니다.
                 state = {
                     ...state,
-                    ...cloudData,
-                    detailData: {
-                        ...state.detailData,
-                        ...(cloudData.detailData || {})
-                    },
-                    viewDates: { ...state.viewDates } // 현재 보고 있는 날짜는 유지
+                    ...cloudExpense,
+                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) }
                 };
 
                 saveToLocal();
                 refreshAllUI();
-                console.log("✅ Supabase 데이터와 완벽하게 동기화되었습니다.");
+                setSyncStatus('online', '클라우드 연동 완료');
             } else {
-                console.log("ℹ️ 클라우드에 기존 데이터가 없습니다. 새로 시작합니다.");
+                setSyncStatus('online', '새 데이터 (클라우드 비어있음)');
             }
         } catch (e) {
-            console.error("❌ Supabase 데이터를 불러오는데 실패했습니다:", e);
+            console.error("❌ 데이터 불러오기 실패:", e);
         } finally {
             isInitialLoading = false;
         }
@@ -127,30 +138,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveToLocal();
         updateStats();
 
-        // 1. 로그인 상태 확인 가드
         if (!currentUser) return;
+        if (isInitialLoading) return;
 
-        // 2. 초기 로딩 중에는 서버 저장 방지 (데이터 덮어쓰기 방지)
-        if (isInitialLoading) {
-            console.log("⚠️ 데이터 불러오기 중이라 저장을 건너뜁니다.");
-            return;
-        }
-
+        setSyncStatus('loading', '백업 중...');
         try {
-            // upsert를 사용하여 유저당 1개의 레코드만 유지 (동기화 속도 향상)
+            // 현재 테이블 구조에 맞춰 expense, income, savings 컬럼에 각각 데이터 분산 저장
+            // (기존의 전체 state를 expense에 넣되, 구조 상 가시성을 위해 나중에 분리 가능)
             const { error } = await supabaseClient
                 .from('user_categories')
                 .upsert(
-                    { user_id: currentUser.id, expense: JSON.stringify(state) },
+                    {
+                        user_id: currentUser.id,
+                        expense: JSON.stringify(state),
+                        income: JSON.stringify(state.transactions?.filter(t => t.type === 'income') || []),
+                        savings: JSON.stringify(state.transactions?.filter(t => t.type === 'savings') || [])
+                    },
                     { onConflict: 'user_id' }
                 );
 
             if (error) throw error;
-            console.log("☁️ 실시간 데이터가 클라우드에 백업되었습니다.");
+            setSyncStatus('online', '저장 완료');
         } catch (e) {
-            console.error("❌ Supabase 저장 실패:", e);
+            setSyncStatus('error', '백업 실패');
+            console.error("❌ 저장 실패:", e);
         }
     }
+
+    window.manualSync = () => loadFromCloud();
 
     function refreshAllUI() {
         refreshCalendars();
