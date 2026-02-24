@@ -205,6 +205,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDetailTables(); // 상세가계부 렌더링 추가
         renderSavingsItems(); // 새로 추가한 자산/적금 렌더링
         updateStats();
+
+        // 총 보유자산 클릭 이벤트 추가
+        const totalAssetBadge = document.querySelector('.total-asset-badge');
+        if (totalAssetBadge) {
+            totalAssetBadge.style.cursor = 'pointer';
+            totalAssetBadge.onclick = openTotalAssetModal;
+        }
     }
 
     // 보안을 위한 문자열 이스케이프 함수 (XSS 방어)
@@ -301,8 +308,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
-        // 총 보유자산
-        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
+        // 총 보유자산 (적금/예금 합산 산출액)
+        const totalAsset = getCalculatedTotalAsset();
         const totalAssetStatsNewEl = document.getElementById('total-asset-stats-new');
         if (totalAssetStatsNewEl) totalAssetStatsNewEl.textContent = `${totalAsset.toLocaleString()}원`;
 
@@ -1532,7 +1539,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             document.getElementById('savings-monthly-group').style.display = isInstallment ? 'flex' : 'none';
-            document.getElementById('savings-interest-group').style.display = isInstallment ? 'flex' : 'none';
+            document.getElementById('savings-interest-group').style.display = 'flex'; // 예금, 적금 모두 이자율 표시
         });
     }
 
@@ -1558,7 +1565,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (saveSavingsBtn) {
-        saveSavingsBtn.onclick = () => {
+        saveSavingsBtn.onclick = async () => {
             const type = document.getElementById('savings-type').value;
             const name = document.getElementById('savings-name').value.trim();
             const monthlyAmount = parseInt(document.getElementById('savings-monthly-amount').value) || 0;
@@ -1609,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             savingsModal.classList.remove('active');
-            saveState();
+            await saveState();
             renderSavingsItems();
         };
     }
@@ -1632,16 +1639,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modal) modal.classList.add('active');
     };
 
-    window.deleteSavingsItem = (id) => {
+    window.deleteSavingsItem = async (id) => {
         if (!confirm('이 기록을 삭제하시겠습니까?')) return;
         state.savingsItems = state.savingsItems.filter(i => i.id !== id);
-        saveState();
+        await saveState();
         renderSavingsItems();
     };
 
     function renderSavingsItems() {
         const listEl = document.getElementById('savings-list');
         if (!listEl) return;
+
+        // 버튼 클릭 이벤트 위임 (한 번만 설정)
+        if (!listEl.dataset.listener) {
+            listEl.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.btn-edit-savings');
+                const deleteBtn = e.target.closest('.btn-delete-savings');
+
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    window.editSavingsItem(id);
+                } else if (deleteBtn) {
+                    const id = deleteBtn.dataset.id;
+                    window.deleteSavingsItem(id);
+                }
+            });
+            listEl.dataset.listener = 'true';
+        }
+
         state.savingsItems = state.savingsItems || [];
 
         if (state.savingsItems.length === 0) {
@@ -1669,11 +1694,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const typeLabel = item.type || '적금';
             let extraInfo = '';
-            if (typeLabel === '적금') {
+
+            // 추가 정보 구성 (이자율은 공통, 월 납입액은 적금만)
+            const interestInfo = item.interestRate ? ` · 이율 ${item.interestRate}%` : '';
+            const monthlyInfo = (typeLabel === '적금' && item.monthlyAmount) ? `월 ${item.monthlyAmount.toLocaleString()}원 납입` : '';
+
+            if (monthlyInfo || interestInfo) {
                 extraInfo = `
                     <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 4px;">
-                        ${item.monthlyAmount ? '월 ' + item.monthlyAmount.toLocaleString() + '원 납입' : '월 납입액 미정'}
-                        ${item.interestRate ? ' · 이율 ' + item.interestRate + '%' : ''}
+                        ${monthlyInfo}${interestInfo}
                     </div>
                 `;
             }
@@ -1687,8 +1716,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             ${extraInfo}
                         </div>
                         <div class="savings-card-actions">
-                            <button onclick="editSavingsItem('${item.id}')" title="수정">✏️</button>
-                            <button onclick="deleteSavingsItem('${item.id}')" title="삭제">❌</button>
+                            <button class="btn-edit-savings" data-id="${item.id}" title="수정">✏️</button>
+                            <button class="btn-delete-savings" data-id="${item.id}" title="삭제">❌</button>
                         </div>
                     </div>
                     
@@ -1710,6 +1739,86 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         }).join('');
+    }
+
+    const totalAssetModal = document.getElementById('total-asset-modal');
+    const closeTotalAssetModalBtn = document.getElementById('close-total-asset-modal');
+    if (closeTotalAssetModalBtn) closeTotalAssetModalBtn.onclick = () => totalAssetModal.classList.remove('active');
+
+    window.addEventListener('click', (e) => {
+        if (e.target === totalAssetModal) totalAssetModal.classList.remove('active');
+    });
+
+    function getCalculatedTotalAsset() {
+        let totalSum = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const items = state.savingsItems || [];
+
+        items.forEach(item => {
+            const start = new Date(item.startDate);
+            const type = item.type || '적금';
+
+            if (type === '적금') {
+                const monthsPassed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+                let currentValue = (Math.max(0, monthsPassed) + 1) * (item.monthlyAmount || 0);
+
+                const endD = new Date(item.endDate);
+                const totalMonths = (endD.getFullYear() - start.getFullYear()) * 12 + (endD.getMonth() - start.getMonth());
+                const maxVal = totalMonths * (item.monthlyAmount || 0);
+                if (currentValue > maxVal) currentValue = maxVal;
+                totalSum += currentValue;
+            } else {
+                totalSum += (item.targetAmount || 0);
+            }
+        });
+        return totalSum;
+    }
+
+    window.openTotalAssetModal = () => {
+        const body = document.getElementById('total-asset-detail-body');
+        const sumEl = document.getElementById('total-asset-sum-modal');
+        if (!body || !sumEl) return;
+
+        body.innerHTML = '';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        state.savingsItems = state.savingsItems || [];
+
+        state.savingsItems.forEach(item => {
+            let currentValue = 0;
+            const start = new Date(item.startDate);
+            const type = item.type || '적금';
+
+            if (type === '적금') {
+                // 적금: (시작부터 오늘까지 경과된 개월 수 + 1) * 월 납입액
+                const monthsPassed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+                currentValue = (Math.max(0, monthsPassed) + 1) * (item.monthlyAmount || 0);
+
+                // 만기 금액(자동계산된 목표액)을 초과하지 않도록 제한
+                const startD = new Date(item.startDate);
+                const endD = new Date(item.endDate);
+                const totalMonths = (endD.getFullYear() - startD.getFullYear()) * 12 + (endD.getMonth() - startD.getMonth());
+                const maxVal = totalMonths * (item.monthlyAmount || 0);
+                if (currentValue > maxVal) currentValue = maxVal;
+            } else {
+                // 예금: 예치 금액 그대로
+                currentValue = item.targetAmount || 0;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><span class="day-label ${type === '적금' ? 'label-savings' : 'label-income'}" style="width: auto; display: inline-block; padding: 2px 8px;">${type}</span></td>
+                <td style="font-weight: 500;">${safeHTML(item.name)}</td>
+                <td style="text-align: right; font-weight: 700;">${currentValue.toLocaleString()}원</td>
+            `;
+            body.appendChild(row);
+        });
+
+        const totalSum = getCalculatedTotalAsset();
+        sumEl.textContent = `${totalSum.toLocaleString()}원`;
+        totalAssetModal.classList.add('active');
     }
 
     refreshAllUI();

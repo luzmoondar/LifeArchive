@@ -1460,7 +1460,7 @@ body {
 
 .detail-table th {
     background: #f8fafc;
-    padding: 0.5rem;
+    padding: 0.8rem 1rem;
     font-size: 0.85rem;
     color: #64748b;
     border: 1px solid #f1f5f9;
@@ -1469,19 +1469,25 @@ body {
 
 .detail-table td {
     border: 1px solid #f1f5f9;
+    padding: 0.6rem 1rem;
+    height: auto;
+    vertical-align: middle;
+}
+
+.detail-table td:has(input) {
     padding: 0;
-    height: 35px;
 }
 
 .detail-table input {
     width: 100%;
     height: 100%;
     border: none !important;
-    padding: 0 0.75rem;
+    padding: 0.8rem 1rem;
     background: transparent;
     font-size: 0.9rem;
     outline: none;
     display: block;
+    min-height: 45px;
 }
 
 .detail-table input:focus {
@@ -1505,7 +1511,7 @@ body {
 .remaining-amount {
     font-weight: 800;
     text-align: center;
-    padding: 0 !important;
+    padding: 0.8rem 1rem !important;
 }
 
 .detail-table .remaining-row td {
@@ -1824,7 +1830,7 @@ body {
     color: #64748b;
     font-weight: 700;
     font-size: 0.85rem;
-    padding: 0.8rem 0.5rem;
+    padding: 1rem 0.8rem;
     border-bottom: 2px solid #eef2f6;
     border-right: 1px solid #eef2f6;
     text-align: center;
@@ -1839,10 +1845,14 @@ body {
 .wedding-gift-table td {
     border-bottom: 1px solid #f1f5f9;
     border-right: 1px solid #f1f5f9;
-    padding: 0;
+    padding: 0.8rem 1rem;
     vertical-align: middle;
-    height: 35px;
-    /* 상세 가계부와 높이 통일 */
+    height: auto;
+}
+
+.wedding-expense-table td:has(input),
+.wedding-gift-table td:has(input) {
+    padding: 0;
 }
 
 .wedding-expense-table td:last-child,
@@ -1861,7 +1871,7 @@ body {
     width: 100%;
     height: 100%;
     /* td 높이에 맞춤 */
-    padding: 0 0.75rem;
+    padding: 0.8rem 1rem;
     /* 상세 가계부와 패딩 통일 */
     border: none !important;
     background: transparent !important;
@@ -1871,6 +1881,7 @@ body {
     outline: none;
     transition: background 0.2s;
     display: block;
+    min-height: 45px;
 }
 
 .wedding-expense-table input::placeholder,
