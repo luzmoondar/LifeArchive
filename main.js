@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
+    let isInitialLoading = false; // 동기화 중 저장을 방지하는 플래그
     const authOverlay = document.getElementById('auth-overlay');
     const authMsg = document.getElementById('auth-msg');
 
@@ -73,20 +74,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabase에서 데이터 불러오기
     async function loadFromCloud() {
         if (!currentUser) return;
+        isInitialLoading = true; // 불러오는 동안 자동 저장 방지
         try {
-            // 현재 로그인한 사용자의 데이터 중 가장 최근 것을 가져옵니다.
+            console.log("Supabase에서 데이터를 불러오는 중...");
             const { data, error } = await supabaseClient
                 .from('user_categories')
-                .select('expense')
+                .select('*')
                 .eq('user_id', currentUser.id)
-                .order('id', { ascending: false })
-                .limit(1);
+                .maybeSingle();
 
-            if (error) throw error;
+            if (error) {
+                console.error("❌ Supabase 데이터 조회 에러 상세:", error);
+                throw error;
+            }
 
-            if (data && data.length > 0) {
-                const cloudData = JSON.parse(data[0].expense);
-                // 기존 데이터와 합칠 때 detailData 구조가 빠지지 않도록 보장
+            if (data && data.expense) {
+                const cloudData = JSON.parse(data.expense);
+
+                // 클라우드 데이터를 우선적으로 적용하되, 로컬에만 있는 최신 날짜 정보 보존
                 state = {
                     ...state,
                     ...cloudData,
@@ -94,18 +99,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ...state.detailData,
                         ...(cloudData.detailData || {})
                     },
-                    viewDates: {
-                        account: new Date().toISOString().slice(0, 7),
-                        life: new Date().toISOString().slice(0, 7),
-                        detail: new Date().toISOString().slice(0, 7)
-                    }
+                    viewDates: { ...state.viewDates } // 현재 보고 있는 날짜는 유지
                 };
+
                 saveToLocal();
                 refreshAllUI();
-                console.log("Supabase 데이터와 동기화되었습니다.");
+                console.log("✅ Supabase 데이터와 완벽하게 동기화되었습니다.");
+            } else {
+                console.log("ℹ️ 클라우드에 기존 데이터가 없습니다. 새로 시작합니다.");
             }
         } catch (e) {
-            console.error("Supabase 데이터를 불러오는데 실패했습니다:", e);
+            console.error("❌ Supabase 데이터를 불러오는데 실패했습니다:", e);
+        } finally {
+            isInitialLoading = false;
         }
     }
 
@@ -117,19 +123,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveToLocal();
         updateStats();
 
-        // Supabase에 데이터 저장
+        // 1. 로그인 상태 확인 가드
         if (!currentUser) return;
+
+        // 2. 초기 로딩 중에는 서버 저장 방지 (데이터 덮어쓰기 방지)
+        if (isInitialLoading) {
+            console.log("⚠️ 데이터 불러오기 중이라 저장을 건너뜁니다.");
+            return;
+        }
+
         try {
+            // upsert를 사용하여 유저당 1개의 레코드만 유지 (동기화 속도 향상)
             const { error } = await supabaseClient
                 .from('user_categories')
-                .insert([{
-                    expense: JSON.stringify(state),
-                    user_id: currentUser.id
-                }]);
+                .upsert(
+                    { user_id: currentUser.id, expense: JSON.stringify(state) },
+                    { onConflict: 'user_id' }
+                );
 
             if (error) throw error;
+            console.log("☁️ 실시간 데이터가 클라우드에 백업되었습니다.");
         } catch (e) {
-            console.error("Supabase 저장 실패:", e);
+            console.error("❌ Supabase 저장 실패:", e);
         }
     }
 
