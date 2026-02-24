@@ -1158,9 +1158,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <tbody class="group-body"></tbody>
                         <tfoot style="background: #fdfdfd; border-top: 1px solid #eef2f6;">
                             <tr>
-                                <td class="total-label" style="background:transparent; border:none;">소계</td>
-                                <td class="total-amount group-total" style="text-align:left; padding-left:0.6rem; background:transparent; border:none;">0원</td>
-                                <td colspan="2" style="background:transparent; border:none;"></td>
+                                <td class="total-label" style="background:#f8fafc; border:none;">합계</td>
+                                <td class="total-amount group-total" style="text-align:left; padding-left:0.6rem; background:#f8fafc; border:none;">0원</td>
+                                <td colspan="2" style="background:#f8fafc; border:none;"></td>
                             </tr>
                         </tfoot>
                     </table>
