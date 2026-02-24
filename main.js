@@ -39,9 +39,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const end = `${y}-${String(m).padStart(2, '0')}-${new Date(y, m, 0).getDate()}`;
             return { start, end };
         } else {
-            // 당월 salaryDay ~ 다음 달 salaryDay - 1
-            const startDate = new Date(y, m - 1, salaryDay);
-            const endDate = new Date(y, m, salaryDay - 1);
+            // 전달 salaryDay ~ 당월 salaryDay - 1
+            // 예: 3월 달력에서 25일 설정 → 2/25 ~ 3/24
+            const startDate = new Date(y, m - 2, salaryDay);
+            const endDate = new Date(y, m - 1, salaryDay - 1);
             return {
                 start: formatLocalDate(startDate),
                 end: formatLocalDate(endDate)
