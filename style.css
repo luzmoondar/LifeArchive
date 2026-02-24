@@ -1607,17 +1607,24 @@ body {
     }
 }
 
-.refresh-btn {
-    background: none;
+.sync-manual-btn {
+    background: rgba(255, 255, 255, 0.15);
     border: none;
-    font-size: 1.1rem;
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 20px;
     cursor: pointer;
-    padding: 5px;
-    transition: transform 0.3s;
+    transition: all 0.2s;
+    font-weight: 500;
 }
 
-.refresh-btn:active {
-    transform: rotate(180deg);
+.sync-manual-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.sync-manual-btn:active {
+    transform: scale(0.95);
 }
 
 /* 고정 기능 스타일 */
