@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- 날짜 범위 집계 헬퍼 ---
+    function formatLocalDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
     function getDateRangeForMonth(monthKey, salaryDay) {
         const [y, m] = monthKey.split('-').map(Number);
         salaryDay = Number(salaryDay) || 1;
@@ -32,12 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const end = `${y}-${String(m).padStart(2, '0')}-${new Date(y, m, 0).getDate()}`;
             return { start, end };
         } else {
-            // 이번 달 salaryDay ~ 다음 달 salaryDay - 1
+            // 당월 salaryDay ~ 다음 달 salaryDay - 1
             const startDate = new Date(y, m - 1, salaryDay);
             const endDate = new Date(y, m, salaryDay - 1);
             return {
-                start: startDate.toISOString().split('T')[0],
-                end: endDate.toISOString().split('T')[0]
+                start: formatLocalDate(startDate),
+                end: formatLocalDate(endDate)
             };
         }
     }
