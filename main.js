@@ -588,11 +588,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function closeModal() { modal.classList.remove('active'); }
     closeBtn.onclick = closeModal;
-    window.onclick = (e) => {
-        if (e.target === modal) closeModal();
-        if (e.target === document.getElementById('acc-day-modal')) document.getElementById('acc-day-modal').classList.remove('active');
-        if (e.target === document.getElementById('life-day-modal')) document.getElementById('life-day-modal').classList.remove('active');
-    };
+    // 모달 외부 클릭 시 닫기 (이벤트 위임 사용)
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-backdrop')) {
+            e.target.classList.remove('active');
+            if (e.target === modal) closeModal(); // entry-modal의 경우 추가 로직 실행
+        }
+    });
 
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
@@ -752,11 +754,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Life Day Modal ---
+    const lifeDayModal = document.getElementById('life-day-modal');
+    const lifeDayCloseBtn = document.querySelector('#life-day-modal .close-modal');
+    if (lifeDayCloseBtn) {
+        lifeDayCloseBtn.onclick = () => lifeDayModal.classList.remove('active');
+    }
+
     function openLifeDayModal(date) {
-        const modal = document.getElementById('life-day-modal');
         document.getElementById('life-day-title').textContent = `${date} 상세 내역`;
         renderLifeDayContent(date);
-        modal.classList.add('active');
+        lifeDayModal.classList.add('active');
     }
 
     function renderLifeDayContent(date) {
@@ -1559,10 +1566,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (closeSavingsModalBtn) closeSavingsModalBtn.onclick = () => savingsModal.classList.remove('active');
 
-    // 모달 배경 클릭
-    window.addEventListener('click', (e) => {
-        if (e.target === savingsModal) savingsModal.classList.remove('active');
-    });
+
 
     if (saveSavingsBtn) {
         saveSavingsBtn.onclick = async () => {
@@ -1745,9 +1749,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeTotalAssetModalBtn = document.getElementById('close-total-asset-modal');
     if (closeTotalAssetModalBtn) closeTotalAssetModalBtn.onclick = () => totalAssetModal.classList.remove('active');
 
-    window.addEventListener('click', (e) => {
-        if (e.target === totalAssetModal) totalAssetModal.classList.remove('active');
-    });
+
 
     function getCalculatedTotalAsset() {
         let totalSum = 0;
