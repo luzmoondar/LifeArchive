@@ -345,10 +345,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        updateCharts(totalExpense, totalSavings, totalDetailPersonal, totalDetailShared);
+        updateCharts(monthlyExpense, monthlySavings, currentDetailPersonal, currentDetailShared);
     }
 
     function updateCharts(totalExpense, totalSavings, detailPersonal, detailShared) {
+        const currentMonth = state.viewDates.account;
+        const salaryDay = state.salaryDay || 1;
+        const range = getDateRangeForMonth(currentMonth, salaryDay);
+        const rangeTrans = state.transactions.filter(t => t.date >= range.start && t.date <= range.end);
+
         const getCtx = (id) => {
             const el = document.getElementById(id);
             return el ? el.getContext('2d') : null;
@@ -361,10 +366,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
 
-        // 소비 데이터 취합 (카테고리별 + 상세가계부 합산)
+        // 이번 달 기준 데이터 취합 (All-time이 아닌 현재 범위 기준)
         const expenseData = state.categories.expense.map(cat => ({
             name: cat,
-            value: state.transactions.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+            value: rangeTrans.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
 
         if (detailPersonal > 0) expenseData.push({ name: '상세(개인)', value: detailPersonal });
@@ -372,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const savingsData = state.categories.savings.map(cat => ({
             name: cat,
-            value: state.transactions.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+            value: rangeTrans.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
 
         const medianCutColors = [
@@ -537,10 +542,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Category Card System ---
     let draggedItem = null; let draggedType = null;
     function renderCategoryGrids() {
+        const currentMonth = state.viewDates.account;
+        const salaryDay = state.salaryDay || 1;
+        const range = getDateRangeForMonth(currentMonth, salaryDay);
+
         const renderGrid = (type, id) => {
             const grid = document.getElementById(id); if (!grid) return; grid.innerHTML = '';
             state.categories[type].forEach((cat, index) => {
-                const amount = state.transactions.filter(t => t.type === type && t.cat === cat && t.date.startsWith(state.viewDates.account)).reduce((s, t) => s + t.amount, 0);
+                // 집계 기간(range) 내의 내역들만 합산
+                const amount = state.transactions.filter(t =>
+                    t.type === type &&
+                    t.cat === cat &&
+                    t.date >= range.start &&
+                    t.date <= range.end
+                ).reduce((s, t) => s + t.amount, 0);
+
                 const card = document.createElement('div'); card.className = 'category-card'; card.draggable = true; card.dataset.index = index; card.dataset.type = type;
                 card.innerHTML = `<button class="card-delete-btn" title="삭제">&times;</button><span class="cat-name">${cat}</span><span class="cat-amount">${amount.toLocaleString()}원</span>`;
                 card.ondragstart = (e) => { draggedItem = index; draggedType = type; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
@@ -672,13 +688,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        const currentMonth = state.viewDates.account;
+        const salaryDay = state.salaryDay || 1;
+        const range = getDateRangeForMonth(currentMonth, salaryDay);
+
         const entries = state.transactions.filter(t => {
             const isMatchCat = (t.cat === currentModalTarget.category);
             const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
             const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
-            const isMonthMatch = t.date.startsWith(state.viewDates.account);
+
+            // 집계 기준일 기반 범위 체크
+            const isInRange = t.date >= range.start && t.date <= range.end;
+
             if (currentModalTarget.type === 'asset') return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
-            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isMonthMatch;
+            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isInRange;
         });
         entries.sort((a, b) => b.id - a.id).forEach(entry => {
             const item = document.createElement('div'); item.className = 'mini-entry';
