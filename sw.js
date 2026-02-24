@@ -1,4 +1,4 @@
-const CACHE_NAME = 'life-archive-v2';
+const CACHE_NAME = 'life-archive-v3';
 const ASSETS = [
     './',
     'index.html',
@@ -14,11 +14,11 @@ self.addEventListener('install', (e) => {
     );
 });
 
-// 네트워크 요청 시 캐시 우선 전략
+// 네트워크 우선 전략으로 변경 (업데이트가 즉시 반영되도록)
 self.addEventListener('fetch', (e) => {
     e.respondWith(
-        caches.match(e.request).then((response) => {
-            return response || fetch(e.request);
+        fetch(e.request).catch(() => {
+            return caches.match(e.request);
         })
     );
 });

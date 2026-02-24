@@ -1555,6 +1555,71 @@ body {
     }
 }
 
+/* Sync Status Indicator */
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    margin-right: 10px;
+}
+
+.sync-status span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.sync-status.online span {
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.sync-status.loading span {
+    background: #f59e0b;
+    animation: pulse 1s infinite;
+}
+
+.sync-status.error span {
+    background: #ef4444;
+}
+
+.sync-status.offline span {
+    background: #64748b;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.4;
+    }
+}
+
+.refresh-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s;
+}
+
+.refresh-btn:active {
+    transform: rotate(180deg);
+}
+
 /* 고정 기능 스타일 */
 .row-action-cell {
     display: flex;

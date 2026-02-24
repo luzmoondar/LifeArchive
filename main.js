@@ -107,10 +107,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (data) {
-                // 각 컬럼에서 데이터를 파싱하여 state에 반영
-                const cloudExpense = data.expense ? JSON.parse(data.expense) : {};
-                // income, savings 컬럼은 현재 구조상 expense JSON 내부에 포함되어 있을 수 있으므로
-                // 전체를 병합하는 방식으로 처리합니다.
+                // Supabase SDK가 jsonb 컬럼을 자동으로 파싱(객체화)해주므로 JSON.parse 불필요
+                const cloudExpense = data.expense || {};
+
                 state = {
                     ...state,
                     ...cloudExpense,
@@ -150,9 +149,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .upsert(
                     {
                         user_id: currentUser.id,
-                        expense: JSON.stringify(state),
-                        income: JSON.stringify(state.transactions?.filter(t => t.type === 'income') || []),
-                        savings: JSON.stringify(state.transactions?.filter(t => t.type === 'savings') || [])
+                        expense: state, // JSON.stringify 없이 객체 그대로 전달
+                        income: state.transactions?.filter(t => t.type === 'income') || [],
+                        savings: state.transactions?.filter(t => t.type === 'savings') || []
                     },
                     { onConflict: 'user_id' }
                 );
