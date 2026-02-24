@@ -114,13 +114,13 @@ body {
     border-color: #ffedd5;
 }
 
-.delete-btn {
+#btn-delete-account {
     display: none;
     background: var(--danger);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 0.75rem;
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
