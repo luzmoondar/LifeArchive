@@ -103,15 +103,13 @@ body {
 }
 
 .logout-btn:hover {
-    background: #fee2e2;
+    background: #fff0f0;
     color: var(--danger);
-    border-color: #fecaca;
 }
 
 .reset-btn:hover {
-    background: #fff7ed;
-    color: #ea580c;
-    border-color: #ffedd5;
+    background: #d5f7ff;
+    color: #0e79d5;
 }
 
 #btn-delete-account {
