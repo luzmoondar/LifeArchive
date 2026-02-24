@@ -549,8 +549,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeBtn = document.querySelector('#entry-modal .close-modal');
     const saveBtn = document.getElementById('save-entry');
 
-    document.getElementById('acc-income-card').onclick = () => openModal('수입', 'income');
-    document.getElementById('acc-asset-card').onclick = () => openModal('자산', 'asset');
+    const accIncomeCard = document.getElementById('acc-income-card');
+    if (accIncomeCard) accIncomeCard.onclick = () => openModal('수입', 'income');
+    const accAssetCard = document.getElementById('acc-asset-card');
+    if (accAssetCard) accAssetCard.onclick = () => openModal('자산', 'asset');
 
     function openModal(category, type) {
         currentModalTarget = { category, type };
