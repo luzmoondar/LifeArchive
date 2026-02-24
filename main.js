@@ -1541,7 +1541,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('savings-target-amount').value = item.targetAmount || 0;
         document.getElementById('savings-start-date').value = item.startDate;
         document.getElementById('savings-end-date').value = item.endDate;
-        savingsModal.classList.add('active');
+
+        const modal = document.getElementById('savings-modal');
+        if (modal) modal.classList.add('active');
     };
 
     window.deleteSavingsItem = (id) => {
