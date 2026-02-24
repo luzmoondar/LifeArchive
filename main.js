@@ -444,12 +444,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
-        const [year, month] = state.viewDates[type].split('-').map(Number);
+
+        const salaryDay = (type === 'account') ? (state.salaryDay || 1) : 1;
+        const monthKey = state.viewDates[type];
+        const [year, month] = monthKey.split('-').map(Number);
+        const range = getDateRangeForMonth(monthKey, salaryDay);
+
+        const startDate = new Date(range.start);
+        const endDate = new Date(range.end);
+        const todayStr = formatLocalDate(new Date());
 
         const header = document.createElement('div');
         header.className = 'calendar-header';
+
+        // 타이틀 표시: 집계 기준일이 1일이 아니면 기간을 함께 표시하거나 "X월분"으로 표시
+        let titleHtml = `${year}년 ${month}월`;
+        if (type === 'account' && salaryDay !== 1) {
+            titleHtml = `${month}월분 지불 회차`;
+        }
+
         header.innerHTML = `
-            <h3>${year}년 ${month}월 <button class="date-picker-btn">📅</button><input type="month" class="hidden-date-input" value="${state.viewDates[type]}"></h3>
+            <h3>${titleHtml} <button class="date-picker-btn">📅</button><input type="month" class="hidden-date-input" value="${monthKey}"></h3>
             <div class="nav-controls"><button class="nav-btn prev-btn">&#8249;</button><button class="nav-btn next-btn">&#8250;</button></div>
         `;
         header.querySelector('.prev-btn').onclick = () => changeMonth(type, -1);
@@ -460,18 +475,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         container.appendChild(header);
 
         const grid = document.createElement('div'); grid.className = 'calendar-grid';
-        ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const h = document.createElement('div'); h.className = 'calendar-day-head'; h.textContent = d; grid.appendChild(h); });
+        ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
+            const h = document.createElement('div');
+            h.className = 'calendar-day-head';
+            h.textContent = d;
+            grid.appendChild(h);
+        });
 
-        const first = new Date(year, month - 1, 1).getDay();
-        const days = new Date(year, month, 0).getDate();
-        for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+        // 시작 요일에 맞춰 빈 칸 삽입
+        const firstDayOfWeek = startDate.getDay();
+        for (let i = 0; i < firstDayOfWeek; i++) grid.appendChild(document.createElement('div'));
 
-        const now = new Date();
-        for (let d = 1; d <= days; d++) {
+        // 기간 내의 모든 날짜 렌더링
+        let currentIter = new Date(startDate);
+        while (currentIter <= endDate) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
-            const fullDate = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            dayEl.innerHTML = `<span>${d}</span><div class="day-content"></div>`;
+            const fullDate = formatLocalDate(currentIter);
+            const d = currentIter.getDate();
+            const m = currentIter.getMonth() + 1; // 달이 바뀌는 경우 가독성을 위해 월 표시 가능
+
+            // 다른 달의 날짜인 경우 살짝 다른 스타일이나 월 표시 추가 (선택사항)
+            const isDifferentMonth = (m !== month);
+            const dateLabel = isDifferentMonth ? `<span style="font-size:0.7em; opacity:0.7;">${m}/</span>${d}` : d;
+
+            dayEl.innerHTML = `<span>${dateLabel}</span><div class="day-content"></div>`;
             const contentDiv = dayEl.querySelector('.day-content');
 
             if (type === 'account') {
@@ -483,32 +511,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (exp > 0) contentDiv.innerHTML += `<div class="day-label label-expense">-${exp.toLocaleString()}</div>`;
                 if (sav > 0) contentDiv.innerHTML += `<div class="day-label label-savings">S:${sav.toLocaleString()}</div>`;
 
-                // 가계부 내역이 있으면 클릭 가능하게 설정
                 if (dayTrans.length > 0) {
                     dayEl.classList.add('clickable-day');
                     dayEl.onclick = () => openAccountDayModal(fullDate);
                 }
             } else {
-                // Issues Rendering
                 const dayIssues = state.issues.filter(i => i.date === fullDate);
                 dayIssues.forEach(issue => {
                     contentDiv.innerHTML += `<div class="day-label label-issue ${issue.checked ? 'checked' : ''}">${issue.text}</div>`;
                 });
-
-                // Life Logs Rendering
                 const dayLogs = state.logs.filter(l => l.date === fullDate);
                 dayLogs.forEach(log => {
                     contentDiv.innerHTML += `<div class="day-label label-life">${log.item}(${log.qty})</div>`;
                 });
-
-                // Make day clickable if there's any content
                 if (dayIssues.length > 0 || dayLogs.length > 0) {
                     dayEl.classList.add('clickable-day');
                     dayEl.onclick = () => openLifeDayModal(fullDate);
                 }
             }
-            if (year === now.getFullYear() && month === (now.getMonth() + 1) && d === now.getDate()) dayEl.classList.add('today');
+
+            if (fullDate === todayStr) dayEl.classList.add('today');
             grid.appendChild(dayEl);
+
+            // 다음 날로 이동
+            currentIter.setDate(currentIter.getDate() + 1);
         }
         container.appendChild(grid);
     }
