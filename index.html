@@ -29,6 +29,7 @@
                 <button onclick="manualSync()" class="sync-manual-btn">동기화</button>
                 <button id="btn-reset-all" class="reset-btn" style="display: none;">데이터 초기화</button>
                 <button id="btn-logout" class="logout-btn" style="display: none;">로그아웃</button>
+                <button id="btn-delete-account" class="delete-btn">회원탈퇴</button>
             </div>
         </div>
 
@@ -72,10 +73,10 @@
                                     <table class="detail-table" id="personal-detail-table">
                                         <thead>
                                             <tr>
-                                                <th style="width: 40px;">No.</th>
+                                                <th style="width: 60px;">No.</th>
                                                 <th>내용</th>
                                                 <th>금액</th>
-                                                <th style="width: 90px;"></th>
+                                                <th style="width: 110px;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="personal-table-body">
@@ -111,10 +112,10 @@
                                     <table class="detail-table" id="shared-detail-table">
                                         <thead>
                                             <tr>
-                                                <th style="width: 40px;">No.</th>
+                                                <th style="width: 60px;">No.</th>
                                                 <th>내용</th>
                                                 <th>금액</th>
-                                                <th style="width: 90px;"></th>
+                                                <th style="width: 110px;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="shared-table-body">
@@ -172,7 +173,7 @@
                             <div class="section-card mt-4" id="asset-management-section">
                                 <div class="section-header">
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <h4 style="margin:0;">🏦 자산 및 만기 현황</h4>
+                                        <h4 style="margin:0;">🏦 자산 현황</h4>
                                         <div class="total-asset-badge">
                                             총 보유자산: <span id="total-asset-stats-new">0원</span>
                                         </div>
@@ -345,10 +346,10 @@
                                             <tr>
                                                 <th style="width: 40px;">NO</th>
                                                 <th>이름</th>
-                                                <th style="width: 100px;">받은금액</th>
-                                                <th style="width: 100px;">낸금액</th>
-                                                <th style="width: 60px;">참석</th>
-                                                <th style="width: 35px;"></th>
+                                                <th style="width: 120px;">받은금액</th>
+                                                <th style="width: 120px;">낸금액</th>
+                                                <th style="width: 80px;">참석</th>
+                                                <th style="width: 45px;"></th>
                                             </tr>
                                         </thead>
                                         <tbody id="wedding-gift-table-body"></tbody>
@@ -398,13 +399,6 @@
                 <div class="form-group">
                     <label>날짜</label>
                     <input type="date" id="modal-date">
-                </div>
-                <!-- 태그 선택 그룹 추가 -->
-                <div class="form-group" id="tag-selection-group" style="display: none;">
-                    <label>태그</label>
-                    <div id="modal-tags" class="tag-container">
-                        <!-- 태그 버튼들이 생성됨 -->
-                    </div>
                 </div>
                 <div class="form-group">
                     <label>항목명</label>
@@ -485,58 +479,6 @@
         </div>
     </div>
 
-    <!-- Category Detail Modal -->
-    <div id="category-detail-modal" class="modal-backdrop">
-        <div class="modal-content card" style="max-width: 700px;">
-            <div class="modal-header">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <h4 id="cat-detail-title">카테고리 상세</h4>
-                    <div class="cat-budget-setting">
-                        <label>예산:</label>
-                        <input type="number" id="cat-budget-input" placeholder="0">
-                        <span>원</span>
-                    </div>
-                </div>
-                <button class="close-modal" onclick="closeCategoryDetailModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="cat-detail-controls">
-                    <div class="search-box">
-                        <input type="text" id="cat-detail-search" placeholder="내역 검색..."
-                            oninput="renderCategoryDetailContent()">
-                    </div>
-                    <div class="detail-actions">
-                        <button id="btn-sort-date" class="secondary-btn" onclick="toggleSortOrder()">최신순</button>
-                        <button id="btn-delete-selected" class="secondary-btn danger-text"
-                            onclick="deleteSelectedEntries()">선택삭제</button>
-                    </div>
-                </div>
-                <div class="table-responsive mt-3">
-                    <table class="detail-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;"><input type="checkbox" id="check-all-entries"
-                                        onclick="toggleAllCheckboxes(this)"></th>
-                                <th style="width: 80px;">날짜</th>
-                                <th>내역</th>
-                                <th style="text-align: right;">금액</th>
-                            </tr>
-                        </thead>
-                        <tbody id="cat-detail-table-body">
-                            <!-- Transactions injected here -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer" style="justify-content: space-between; align-items: center;">
-                <div class="cat-detail-sum">
-                    합계: <span id="cat-detail-total-amount">0원</span>
-                </div>
-                <button class="primary-btn" onclick="openEntryFromDetail()">+ 내역 추가하기</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Savings Item Modal -->
     <div id="savings-modal" class="modal-backdrop">
         <div class="modal-content card">
@@ -546,12 +488,27 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
+                    <label>상품 구분</label>
+                    <select id="savings-type">
+                        <option value="적금">적금</option>
+                        <option value="예금">예금</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>상품명</label>
                     <input type="text" id="savings-name" placeholder="예: 청년희망적금">
                 </div>
-                <div class="form-group">
-                    <label>목표 금액</label>
+                <div class="form-group" id="savings-target-group">
+                    <label id="savings-target-label">목표 금액</label>
                     <input type="number" id="savings-target-amount" placeholder="0">
+                </div>
+                <div class="form-group" id="savings-monthly-group">
+                    <label>월 납입액</label>
+                    <input type="number" id="savings-monthly-amount" placeholder="0">
+                </div>
+                <div class="form-group" id="savings-interest-group">
+                    <label>이자율 (%)</label>
+                    <input type="number" step="0.1" id="savings-interest" placeholder="0.0">
                 </div>
                 <div class="form-group">
                     <label>시작일</label>
@@ -564,6 +521,38 @@
             </div>
             <div class="modal-footer">
                 <button id="save-savings-item" class="primary-btn">저장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Asset Detail Modal -->
+    <div id="total-asset-modal" class="modal-backdrop">
+        <div class="modal-content card" style="max-width: 600px;">
+            <div class="modal-header">
+                <h4>💰 자산 보유 현황 상세</h4>
+                <button class="close-modal" id="close-total-asset-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="detail-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">구분</th>
+                                <th>상품명</th>
+                                <th style="text-align: right; width: 140px;">현재 보유액</th>
+                            </tr>
+                        </thead>
+                        <tbody id="total-asset-detail-body">
+                            <!-- JS injections -->
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8fafc; font-weight: 700;">
+                                <td colspan="2" style="text-align: center;">합계</td>
+                                <td id="total-asset-sum-modal" style="text-align: right; color: var(--primary);">0원</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

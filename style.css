@@ -103,15 +103,26 @@ body {
 }
 
 .logout-btn:hover {
-    background: #fee2e2;
+    background: #fff0f0;
     color: var(--danger);
-    border-color: #fecaca;
 }
 
 .reset-btn:hover {
-    background: #fff7ed;
-    color: #ea580c;
-    border-color: #ffedd5;
+    background: #edfcff;
+    color: #0e79d5;
+}
+
+#btn-delete-account {
+    display: none;
+    background: var(--danger);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .tab-nav {
@@ -285,7 +296,7 @@ body {
 }
 
 #stats .summary-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     width: 100%;
     gap: 1.5rem;
     margin-bottom: 2rem;
@@ -491,33 +502,14 @@ body {
 }
 
 .category-card .cat-name {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--text);
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
 }
 
-.cat-budget-usage,
-.cat-usage {
+.category-card .cat-amount {
     font-size: 0.85rem;
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0 5px;
-}
-
-.cat-budget-usage .label,
-.cat-usage .label {
-    color: var(--text-light);
-}
-
-.cat-budget-usage strong {
-    color: #94a3b8;
-}
-
-.cat-usage .amount {
-    font-weight: 700;
     color: var(--primary);
+    font-weight: 700;
 }
 
 .category-card .card-delete-btn {
@@ -606,128 +598,12 @@ body {
     color: var(--text-light);
 }
 
-.modal-body input {
+.modal-body input,
+.modal-body select {
     padding: 0.8rem;
     border: 1px solid var(--border);
     border-radius: 0.75rem;
     font-size: 1rem;
-}
-
-/* Tag Selection Styles */
-.tag-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.2rem;
-}
-
-.tag-item {
-    padding: 0.5rem 0.8rem;
-    border-radius: 2rem;
-    background: #f1f5f9;
-    color: var(--text-light);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-}
-
-.tag-item:hover {
-    background: #e2e8f0;
-}
-
-.tag-item.active {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
-}
-
-.tag-badge {
-    display: inline-block;
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    margin-right: 6px;
-    background: #f1f5f9;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    vertical-align: middle;
-}
-
-/* Category Detail Modal Special Styles */
-.cat-budget-setting {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #f8fafc;
-    padding: 4px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-}
-
-.cat-budget-setting label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-light);
-    margin: 0;
-}
-
-.cat-budget-setting input {
-    width: 90px;
-    border: none;
-    background: transparent;
-    font-weight: 700;
-    color: var(--primary);
-    text-align: right;
-    padding: 0;
-    font-size: 1rem;
-}
-
-.cat-budget-setting input:focus {
-    outline: none;
-}
-
-.cat-detail-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.search-box {
-    flex: 1;
-    min-width: 200px;
-}
-
-.search-box input {
-    width: 100%;
-    padding: 0.7rem 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid var(--border);
-    font-size: 0.9rem;
-}
-
-.detail-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.danger-text {
-    color: var(--danger) !important;
-}
-
-.cat-detail-sum {
-    font-weight: 700;
-    color: var(--text);
-}
-
-.cat-detail-sum span {
-    color: var(--primary);
-    font-size: 1.2rem;
 }
 
 .modal-footer {
@@ -1487,7 +1363,7 @@ body {
     color: var(--text-light);
     font-weight: 600;
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     border-bottom: 2px solid var(--border);
 }
 
@@ -1495,6 +1371,7 @@ body {
     padding: 1rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
+    text-align: center;
 }
 
 .stock-table tr:last-child td {
@@ -1519,6 +1396,23 @@ body {
 
 .stock-table .delete-stock-btn:hover {
     background: #fecaca;
+}
+
+.stock-table .edit-stock-btn {
+    background: #eef2ff;
+    color: var(--primary);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-right: 4px;
+}
+
+.stock-table .edit-stock-btn:hover {
+    background: #e0e7ff;
 }
 
 @media (max-width: 600px) {
@@ -1584,7 +1478,7 @@ body {
 
 .detail-table th {
     background: #f8fafc;
-    padding: 0.5rem;
+    padding: 0.6rem 0.8rem;
     font-size: 0.85rem;
     color: #64748b;
     border: 1px solid #f1f5f9;
@@ -1593,19 +1487,25 @@ body {
 
 .detail-table td {
     border: 1px solid #f1f5f9;
+    padding: 0.4rem 0.6rem;
+    height: auto;
+    vertical-align: middle;
+}
+
+.detail-table td:has(input) {
     padding: 0;
-    height: 35px;
 }
 
 .detail-table input {
     width: 100%;
     height: 100%;
     border: none !important;
-    padding: 0 0.75rem;
+    padding: 0.4rem 0.6rem;
     background: transparent;
     font-size: 0.9rem;
     outline: none;
     display: block;
+    min-height: 36px;
 }
 
 .detail-table input:focus {
@@ -1629,7 +1529,7 @@ body {
 .remaining-amount {
     font-weight: 800;
     text-align: center;
-    padding: 0 !important;
+    padding: 0.6rem 0.8rem !important;
 }
 
 .detail-table .remaining-row td {
@@ -1948,7 +1848,7 @@ body {
     color: #64748b;
     font-weight: 700;
     font-size: 0.85rem;
-    padding: 0.8rem 0.5rem;
+    padding: 0.6rem 0.4rem;
     border-bottom: 2px solid #eef2f6;
     border-right: 1px solid #eef2f6;
     text-align: center;
@@ -1963,10 +1863,14 @@ body {
 .wedding-gift-table td {
     border-bottom: 1px solid #f1f5f9;
     border-right: 1px solid #f1f5f9;
-    padding: 0;
+    padding: 0.4rem 0.6rem;
     vertical-align: middle;
-    height: 35px;
-    /* 상세 가계부와 높이 통일 */
+    height: auto;
+}
+
+.wedding-expense-table td:has(input),
+.wedding-gift-table td:has(input) {
+    padding: 0;
 }
 
 .wedding-expense-table td:last-child,
@@ -1985,7 +1889,7 @@ body {
     width: 100%;
     height: 100%;
     /* td 높이에 맞춤 */
-    padding: 0 0.75rem;
+    padding: 0.4rem 0.6rem;
     /* 상세 가계부와 패딩 통일 */
     border: none !important;
     background: transparent !important;
@@ -1995,6 +1899,7 @@ body {
     outline: none;
     transition: background 0.2s;
     display: block;
+    min-height: 36px;
 }
 
 .wedding-expense-table input::placeholder,
@@ -2027,7 +1932,7 @@ body {
     font-size: 0.8rem;
     font-weight: 600;
     text-align: center;
-    width: 45px;
+    width: 40px;
 }
 
 /* Summary Area styling */
