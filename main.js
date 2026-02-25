@@ -61,11 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         issues: [],
         viewDates: {
             account: new Date().toISOString().slice(0, 7),
-            life: new Date().toISOString().slice(0, 7),
-            detail: new Date().toISOString().slice(0, 7)
+            life: new Date().toISOString().slice(0, 7)
         },
-        detailData: {}, // { 'YYYY-MM': { personal: [], shared: [], budgets: { personal: 0, shared: 0 } } }
-        pinnedItems: { personal: [], shared: [] }, // 모든 달에 상단 고정되는 항목
         weddingCosts: [
             { id: 'group1', title: '', items: [] },
             { id: 'group2', title: '', items: [] },
@@ -81,8 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const today = new Date().toISOString().slice(0, 7);
         state.viewDates = {
             account: today,
-            life: today,
-            detail: today
+            life: today
         };
     }
 
@@ -203,7 +199,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderStockList();
         renderWeddingCosts();
         renderWeddingGifts();
-        renderDetailTables(); // 상세가계부 렌더링 추가
         renderSavingsItems(); // 새로 추가한 자산/적금 렌더링
         updateStats();
 
@@ -247,8 +242,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const targetContent = document.getElementById(tabId);
         if (targetContent) targetContent.classList.add('active');
 
-        // 상세가계부 탭 클릭 시 즉시 렌더링
-        if (tabId === 'detail') renderDetailTables();
         if (tabId === 'wedding') { renderWeddingCosts(); renderWeddingGifts(); }
 
         // 상단 버튼 동기화
@@ -274,30 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const salaryDay = state.salaryDay || 1;
         const range = getDateRangeForMonth(currentMonth, salaryDay);
 
-        // 상세가계부 합계 계산 (모든 달 합산 - 전체통계용)
-        let totalDetailPersonal = 0;
-        let totalDetailShared = 0;
-
-        // 고정 항목(pinnedItems)은 모든 달에 공통으로 적용되므로, 데이터가 있는 각 달마다 합산해줍니다.
-        const pinnedPersonalTotal = (state.pinnedItems?.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-        const pinnedSharedTotal = (state.pinnedItems?.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-        const pinnedTotal = pinnedPersonalTotal + pinnedSharedTotal;
-
-        const detailMonths = Object.keys(state.detailData || {});
-        detailMonths.forEach(monthKey => {
-            const mData = state.detailData[monthKey];
-            totalDetailPersonal += (mData.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-            totalDetailShared += (mData.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-            // 해당 달에 고정 항목만큼의 지출이 발생한 것으로 간주
-            totalDetailPersonal += pinnedPersonalTotal;
-            totalDetailShared += pinnedSharedTotal;
-        });
-
-        // 이번 달 상세가계부 합계 (가계부 탭용)
-        const currentDetailData = state.detailData[currentMonth] || { personal: [], shared: [] };
-        const currentDetailPersonal = (currentDetailData.personal || []).reduce((sum, item) => sum + (item.amount || 0), 0) + pinnedPersonalTotal;
-        const currentDetailShared = (currentDetailData.shared || []).reduce((sum, item) => sum + (item.amount || 0), 0) + pinnedSharedTotal;
-        const currentMonthDetailExpense = currentDetailPersonal + currentDetailShared;
+        const currentMonthDetailExpense = 0;
 
         // 전체 통계용 (All Time)
         const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -649,7 +619,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('modal-date').value = date || `${state.viewDates.account}-01`;
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
-        if (document.getElementById('modal-tag')) document.getElementById('modal-tag').value = '기타';
+
+        // 태그 칩 초기화 (기본 '기타' 선택)
+        const chips = document.querySelectorAll('.tag-chip');
+        chips.forEach(c => {
+            if (c.dataset.value === '기타') c.classList.add('active');
+            else c.classList.remove('active');
+        });
 
         // 소비/저축 카테고리인 경우만 이름 변경 버튼 표시
         const renameBtn = document.getElementById('btn-rename-cat');
@@ -659,15 +635,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             renameBtn.style.display = 'none';
         }
 
-        // 상세 내역 모달이 열려있는지 확인하여 뒤로가기 버튼 표시
-        const backBtn = document.getElementById('btn-modal-back');
-        const detailModal = document.getElementById('category-detail-modal');
-        if (detailModal && detailModal.classList.contains('active')) {
-            backBtn.style.display = 'inline-block';
-        } else {
-            backBtn.style.display = 'none';
-        }
-
         modal.classList.add('active');
         document.body.classList.add('modal-open');
         // 모달창 상단으로 스크롤 초기화
@@ -675,10 +642,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modalContent) modalContent.scrollTop = 0;
     }
 
-    // 뒤로가기 버튼 클릭 시 (단순히 현재 모달만 닫음)
-    document.getElementById('btn-modal-back').onclick = () => {
-        modal.classList.remove('active');
-        // 상세 모달이 열려있으므로 body.modal-open은 유지
+    // 태그 칩 클릭 이벤트
+    document.getElementById('modal-tag-chips').onclick = (e) => {
+        const chip = e.target.closest('.tag-chip');
+        if (chip) {
+            document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        }
     };
 
     function closeModal() {
@@ -716,8 +686,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value,
             n = document.getElementById('modal-name').value,
-            a = parseInt(document.getElementById('modal-amount').value) || 0,
-            t = document.getElementById('modal-tag') ? document.getElementById('modal-tag').value : '기타';
+            a = parseInt(document.getElementById('modal-amount').value) || 0;
+
+        const activeChip = document.querySelector('.tag-chip.active');
+        const t = activeChip ? activeChip.dataset.value : '기타';
 
         if (d && n && a > 0) {
             if (currentModalTarget.type === 'wedding') {
@@ -1176,8 +1148,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 정렬 상태 초기화
         detailSortOrder = 'newest';
-        document.getElementById('btn-sort-newest').style.display = 'inline-block';
-        document.getElementById('btn-sort-oldest').style.display = 'none';
+        const sortBtn = document.getElementById('btn-sort-newest');
+        if (sortBtn) {
+            sortBtn.innerHTML = '최신순 ⬇️';
+            sortBtn.style.display = 'inline-block';
+        }
 
         renderCategoryDetail(catName);
         modal.classList.add('active');
@@ -1199,15 +1174,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 검색 및 정렬 이벤트
     document.getElementById('cat-search-input').oninput = () => renderCategoryDetail(currentDetailCat);
     document.getElementById('btn-sort-newest').onclick = () => {
-        detailSortOrder = 'oldest';
-        document.getElementById('btn-sort-newest').style.display = 'none';
-        document.getElementById('btn-sort-oldest').style.display = 'inline-block';
-        renderCategoryDetail(currentDetailCat);
-    };
-    document.getElementById('btn-sort-oldest').onclick = () => {
-        detailSortOrder = 'newest';
-        document.getElementById('btn-sort-oldest').style.display = 'none';
-        document.getElementById('btn-sort-newest').style.display = 'inline-block';
+        if (detailSortOrder === 'newest') {
+            detailSortOrder = 'oldest';
+            document.getElementById('btn-sort-newest').innerHTML = '오래된순 ⬆️';
+        } else {
+            detailSortOrder = 'newest';
+            document.getElementById('btn-sort-newest').innerHTML = '최신순 ⬇️';
+        }
         renderCategoryDetail(currentDetailCat);
     };
 
@@ -1262,8 +1235,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <td><input type="checkbox" class="trans-checkbox" value="${t.id}"></td>
             <td>${t.date.slice(5)}</td>
             <td>
-                <div style="font-weight:600;">${safeHTML(t.name)}</div>
-                <div class="trans-tag">${safeHTML(t.tag || '기타')}</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="trans-tag" style="margin: 0; white-space: nowrap;">${safeHTML(t.tag || '기타')}</span>
+                    <span style="font-weight:600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${safeHTML(t.name)}</span>
+                </div>
             </td>
             <td style="text-align: right; font-weight:700;">${t.amount.toLocaleString()}원</td>
         </tr>
@@ -1308,211 +1283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // --- Detailed Account Tab Logic ---
 
-    // 현재 선택된 달의 detailData 가져오기 (없으면 초기화)
-    function getDetailMonth() {
-        const key = state.viewDates.detail;
-        if (!state.detailData[key]) {
-            state.detailData[key] = {
-                personal: [],
-                shared: [],
-                budgets: { personal: 0, shared: 0 }
-            };
-        }
-        // 하위 속성이 없을 경우 보완
-        const d = state.detailData[key];
-        if (!d.personal) d.personal = [];
-        if (!d.shared) d.shared = [];
-        if (!d.budgets) d.budgets = { personal: 0, shared: 0 };
-        return d;
-    }
-
-    function renderDetailMonthNav() {
-        const key = state.viewDates.detail; // 'YYYY-MM'
-        const [y, m] = key.split('-').map(Number);
-        const label = document.getElementById('detail-month-label');
-        if (label) label.textContent = `${y}년 ${String(m).padStart(2, '0')}월`;
-    }
-
-    function renderDetailTables() {
-        renderDetailMonthNav();
-        renderDetailTable('personal', 'personal-table-body');
-        renderDetailTable('shared', 'shared-table-body');
-        syncBudgetInputs();
-    }
-
-    function syncBudgetInputs() {
-        const monthData = getDetailMonth();
-        const pBudgetInput = document.getElementById('personal-budget');
-        const sBudgetInput = document.getElementById('shared-budget');
-        if (pBudgetInput) {
-            pBudgetInput.value = monthData.budgets.personal || '';
-            pBudgetInput.oninput = (e) => {
-                getDetailMonth().budgets.personal = parseInt(e.target.value) || 0;
-                updateDetailTotals('personal');
-                saveToLocal();
-            };
-        }
-        if (sBudgetInput) {
-            sBudgetInput.value = monthData.budgets.shared || '';
-            sBudgetInput.oninput = (e) => {
-                getDetailMonth().budgets.shared = parseInt(e.target.value) || 0;
-                updateDetailTotals('shared');
-                saveToLocal();
-            };
-        }
-    }
-
-    function renderDetailTable(type, bodyId) {
-        const body = document.getElementById(bodyId);
-        if (!body) return;
-        body.innerHTML = '';
-
-        if (!state.pinnedItems) state.pinnedItems = { personal: [], shared: [] };
-        if (!state.pinnedItems[type]) state.pinnedItems[type] = [];
-        const pinned = state.pinnedItems[type];
-
-        const monthData = getDetailMonth();
-        if (!monthData[type]) monthData[type] = [];
-        const data = monthData[type];
-
-        // 최소 20행 보장 로직 개선
-        if (data.length < 20) {
-            for (let i = data.length; i < 20; i++) {
-                data.push({ id: 'row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9), title: '', amount: 0 });
-            }
-            saveToLocal(); // 한 번만 저장
-        }
-
-        // 헬퍼: 행 DOM 생성
-        function makeRow(item, index, isPinned) {
-            const tr = document.createElement('tr');
-            if (isPinned) tr.classList.add('pinned-row');
-
-            tr.innerHTML = `
-                <td style="text-align: center; color: #64748b; font-size: 0.8rem;">${isPinned ? '📌' : index + 1}</td>
-                <td><input type="text" class="detail-title" value="${item.title || ''}" placeholder="내용 입력"${isPinned ? '' : ''}></td>
-                <td><input type="number" class="detail-amount" value="${item.amount || ''}" placeholder="금액"></td>
-                <td class="row-action-cell">
-                    <button class="pin-row-btn ${isPinned ? 'pinned' : ''}" title="${isPinned ? '고정 해제' : '고정'}">${isPinned ? '📌' : '📌'}</button>
-                    <button class="remove-row-btn" title="삭제">✕</button>
-                </td>
-            `;
-
-            const titleInput = tr.querySelector('.detail-title');
-            const amountInput = tr.querySelector('.detail-amount');
-            const pinBtn = tr.querySelector('.pin-row-btn');
-            const removeBtn = tr.querySelector('.remove-row-btn');
-
-            titleInput.oninput = (e) => {
-                item.title = e.target.value;
-                saveToLocal();
-            };
-
-            amountInput.oninput = (e) => {
-                item.amount = parseInt(e.target.value) || 0;
-                updateDetailTotals(type);
-                saveToLocal();
-            };
-
-            pinBtn.onclick = () => {
-                if (isPinned) {
-                    // 고정 해제: pinnedItems에서 제거
-                    state.pinnedItems[type] = state.pinnedItems[type].filter(p => p.id !== item.id);
-                } else {
-                    // 고정: pinnedItems에 추가 후 일반 목록에서 제거
-                    state.pinnedItems[type].push({ ...item });
-                    getDetailMonth()[type] = getDetailMonth()[type].filter(r => r.id !== item.id);
-                }
-                saveState();
-                renderDetailTables();
-            };
-
-            removeBtn.onclick = () => {
-                if (isPinned) {
-                    state.pinnedItems[type] = state.pinnedItems[type].filter(p => p.id !== item.id);
-                } else {
-                    getDetailMonth()[type] = getDetailMonth()[type].filter(r => r.id !== item.id);
-                }
-                saveState();
-                renderDetailTables();
-            };
-
-            return tr;
-        }
-
-        // 1. 고정 항목 먼저 렌더링
-        pinned.forEach((item) => {
-            body.appendChild(makeRow(item, 0, true));
-        });
-
-        // 구분선 (고정 항목이 있을 때만)
-        if (pinned.length > 0) {
-            const sep = document.createElement('tr');
-            sep.innerHTML = `<td colspan="4" class="pinned-separator"></td>`;
-            body.appendChild(sep);
-        }
-
-        // 2. 일반 항목 렌더링
-        data.forEach((item, index) => {
-            body.appendChild(makeRow(item, index, false));
-        });
-
-        updateDetailTotals(type);
-    }
-
-    function updateDetailTotals(type) {
-        if (!state.pinnedItems) state.pinnedItems = { personal: [], shared: [] };
-        const monthData = getDetailMonth();
-        const pinnedTotal = (state.pinnedItems[type] || []).reduce((sum, item) => sum + (item.amount || 0), 0);
-        const regularTotal = monthData[type].reduce((sum, item) => sum + (item.amount || 0), 0);
-        const total = pinnedTotal + regularTotal;
-        const totalEl = document.getElementById(`${type}-total`);
-        if (totalEl) totalEl.textContent = `${total.toLocaleString()}원`;
-
-        // 상세 금액이 바뀌었으므로 전체 통계도 갱신
-        updateStats();
-
-        const budget = monthData.budgets[type] || 0;
-        const remaining = budget - total;
-        const remainingEl = document.getElementById(`${type}-remaining`);
-        if (remainingEl) {
-            remainingEl.textContent = `${remaining.toLocaleString()}원`;
-            remainingEl.style.color = remaining < 0 ? '#ef4444' : '#2b8a3e';
-        }
-    }
-
-
-
-    document.getElementById('add-personal-row').onclick = () => {
-        getDetailMonth().personal.push({ id: crypto.randomUUID(), title: '', amount: 0 });
-        saveState();
-        renderDetailTables();
-    };
-
-    document.getElementById('add-shared-row').onclick = () => {
-        getDetailMonth().shared.push({ id: crypto.randomUUID(), title: '', amount: 0 });
-        saveState();
-        renderDetailTables();
-    };
-
-    // 연월 이전/다음 버튼
-    document.getElementById('detail-prev-month').onclick = () => {
-        const [y, m] = state.viewDates.detail.split('-').map(Number);
-        const d = new Date(y, m - 2); // m-1 is current month (0-indexed), m-2 is prev
-        state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        saveToLocal();
-        renderDetailTables();
-    };
-
-    document.getElementById('detail-next-month').onclick = () => {
-        const [y, m] = state.viewDates.detail.split('-').map(Number);
-        const d = new Date(y, m); // m is next month (0-indexed)
-        state.viewDates.detail = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        saveToLocal();
-        renderDetailTables();
-    };
 
     // --- Wedding Tab Logic ---
 

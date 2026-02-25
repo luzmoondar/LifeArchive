@@ -38,7 +38,6 @@
                 <nav class="tab-nav">
                     <button class="tab-btn active" data-tab="stats">자산 현황</button>
                     <button class="tab-btn" data-tab="account">가계부</button>
-                    <button class="tab-btn" data-tab="detail">상세가계부</button>
                     <button class="tab-btn" data-tab="monthly">생활먼슬리</button>
                     <button class="tab-btn" data-tab="wedding">결혼식</button>
                 </nav>
@@ -46,96 +45,7 @@
 
             <main class="content-area">
 
-                <!-- Detailed Account Tab -->
-                <section id="detail" class="tab-content">
-                    <div class="detail-card">
-                        <!-- 연월 네비게이터 -->
-                        <div class="detail-month-nav">
-                            <button id="detail-prev-month" class="month-nav-btn">&#8249;</button>
-                            <span id="detail-month-label" class="month-nav-label">2026년 02월</span>
-                            <button id="detail-next-month" class="month-nav-btn">&#8250;</button>
-                        </div>
 
-                        <div class="detail-grid">
-                            <div class="section-card">
-                                <div class="section-header">
-                                    <div class="title-with-budget">
-                                        <h4>개인소비</h4>
-                                        <div class="budget-input-group">
-                                            <label>목표예산:</label>
-                                            <input type="number" id="personal-budget" placeholder="0">
-                                            <span>원</span>
-                                        </div>
-                                    </div>
-                                    <button class="add-btn" id="add-personal-row">+</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="detail-table" id="personal-detail-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60px;">No.</th>
-                                                <th>내용</th>
-                                                <th>금액</th>
-                                                <th style="width: 110px;"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="personal-table-body">
-                                            <!-- rows added here -->
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="2" class="total-label">합계</td>
-                                                <td colspan="2" class="total-amount" id="personal-total">0원</td>
-                                            </tr>
-                                            <tr class="remaining-row">
-                                                <td colspan="2" class="total-label">남은 금액</td>
-                                                <td colspan="2" class="remaining-amount" id="personal-remaining">0원</td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="section-card">
-                                <div class="section-header">
-                                    <div class="title-with-budget">
-                                        <h4>공용소비</h4>
-                                        <div class="budget-input-group">
-                                            <label>목표예산:</label>
-                                            <input type="number" id="shared-budget" placeholder="0">
-                                            <span>원</span>
-                                        </div>
-                                    </div>
-                                    <button class="add-btn" id="add-shared-row">+</button>
-                                </div>
-                                <div class="table-responsive">
-                                    <table class="detail-table" id="shared-detail-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="width: 60px;">No.</th>
-                                                <th>내용</th>
-                                                <th>금액</th>
-                                                <th style="width: 110px;"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="shared-table-body">
-                                            <!-- rows added here -->
-                                        </tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td colspan="2" class="total-label">합계</td>
-                                                <td colspan="2" class="total-amount" id="shared-total">0원</td>
-                                            </tr>
-                                            <tr class="remaining-row">
-                                                <td colspan="2" class="total-label">남은 금액</td>
-                                                <td colspan="2" class="remaining-amount" id="shared-remaining">0원</td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                        </div><!-- end detail-grid -->
-                </section>
 
                 <section id="stats" class="tab-content active">
                     <div class="stats-layout">
@@ -389,7 +299,6 @@
         <div class="modal-content card">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <button id="btn-modal-back" class="modal-back-btn" style="display: none;">⬅️</button>
                     <h4 id="modal-title">내역 추가</h4>
                     <button id="btn-rename-cat" class="action-icon-btn" title="카테고리명 변경"
                         style="display: none;">✏️</button>
@@ -402,23 +311,23 @@
                     <input type="date" id="modal-date">
                 </div>
                 <div class="form-group">
-                    <label>항목명</label>
-                    <input type="text" id="modal-name" placeholder="항목명을 입력하세요">
+                    <label>내용</label>
+                    <input type="text" id="modal-name" placeholder="내용을 입력하세요">
                 </div>
                 <div class="form-group">
                     <label>태그</label>
-                    <select id="modal-tag">
-                        <option value="기타">기타</option>
-                        <option value="쇼핑">쇼핑</option>
-                        <option value="외식">외식</option>
-                        <option value="장보기">장보기</option>
-                        <option value="병원">병원</option>
-                        <option value="주거">주거</option>
-                        <option value="생필품">생필품</option>
-                        <option value="여행">여행</option>
-                        <option value="문화/여가">문화/여가</option>
-                        <option value="통신/구독">통신/구독</option>
-                    </select>
+                    <div id="modal-tag-chips" class="tag-chips">
+                        <div class="tag-chip" data-value="생필품">생필품</div>
+                        <div class="tag-chip active" data-value="쇼핑">쇼핑</div>
+                        <div class="tag-chip" data-value="외식">외식</div>
+                        <div class="tag-chip" data-value="장보기">장보기</div>
+                        <div class="tag-chip" data-value="주거">주거</div>
+                        <div class="tag-chip" data-value="여행">여행</div>
+                        <div class="tag-chip" data-value="건강">건강</div>
+                        <div class="tag-chip" data-value="문화">문화</div>
+                        <div class="tag-chip" data-value="통신/구독">통신/구독</div>
+                        <div class="tag-chip" data-value="기타">기타</div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>금액</label>
@@ -463,7 +372,7 @@
             <div class="modal-body">
                 <!-- Budget Setting Section -->
                 <div class="detail-budget-section mb-4">
-                    <label>월간 예산 설정</label>
+                    <label style="display: block; margin-bottom: 8px;">월간 예산 설정</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="number" id="cat-budget-input" placeholder="예산을 입력하세요">
                         <button id="save-cat-budget" class="secondary-btn" style="white-space:nowrap;">저장</button>
@@ -471,14 +380,13 @@
                 </div>
 
                 <!-- Search, Delete, Sort Controls -->
-                <div class="detail-controls mb-3">
+                <div class="detail-controls mb-4">
                     <div class="search-box">
                         <input type="text" id="cat-search-input" placeholder="내용 검색...">
                     </div>
                     <button id="btn-delete-selected" class="delete-selected-btn">선택삭제</button>
                     <div class="sort-buttons">
                         <button id="btn-sort-newest" class="sort-btn active">최신순 ⬇️</button>
-                        <button id="btn-sort-oldest" class="sort-btn" style="display:none;">오래된순 ⬆️</button>
                     </div>
                 </div>
 
@@ -489,7 +397,7 @@
                             <tr>
                                 <th style="width: 30px;"><input type="checkbox" id="check-all-trans"></th>
                                 <th style="width: 80px;">날짜</th>
-                                <th>내용/태그</th>
+                                <th>태그/내용</th>
                                 <th style="width: 100px; text-align: right;">금액</th>
                             </tr>
                         </thead>
@@ -624,7 +532,7 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="main.js?v=20260225_1"></script>
+    <script src="main.js?v=20260225_3"></script>
 </body>
 
 </html>
