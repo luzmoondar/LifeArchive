@@ -54,7 +54,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let state = {
         transactions: [],
         categories: {
-            expense: ['식비', '생활', '교통', '여가'],
+            expense: [
+                { name: '식비', budget: 0 },
+                { name: '생활', budget: 0 },
+                { name: '교통', budget: 0 },
+                { name: '여가', budget: 0 }
+            ],
             savings: ['적금', '투자', '비상금']
         },
         logs: [],
@@ -91,6 +96,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const parsed = JSON.parse(localData);
         state = { ...state, ...parsed };
 
+        // Category Migration: string[] to {name, budget}[]
+        if (state.categories.expense.length > 0 && typeof state.categories.expense[0] === 'string') {
+            state.categories.expense = state.categories.expense.map(name => ({ name, budget: 0 }));
+        }
+
         // Wedding 데이터 이관 지원
         state.weddingCosts = parsed.weddingCosts || state.weddingCosts;
         state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
@@ -99,6 +109,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 접속 시에는 무조건 "이번 달"로 고정
         resetViewDatesToToday();
     }
+
+    const presetTags = ['생필품', '쇼핑', '외식', '장보기', '주거', '여행', '여가/문화', '통신/구독', '기타'];
+    let selectedTag = null;
+    let currentCatDetail = null;
+    let catSortOrder = 'desc'; // 'desc' (최신순) or 'asc' (오래된순)
 
     // Supabase에서 데이터 불러오기
     async function loadFromCloud() {
@@ -133,8 +148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 state = {
                     ...state,
                     ...cloudExpense,
-                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) },
-                    savingsItems: cloudExpense.savingsItems || state.savingsItems || []
+                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) }
                 };
 
                 // 클라우드 데이터를 불러오더라도 "현재 보고 있는 날짜"는 오늘로 유지
@@ -145,11 +159,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 setSyncStatus('online', '클라우드 연동 완료');
             } else {
                 setSyncStatus('online', '새 데이터 (클라우드 비어있음)');
-                // 만약 기존 로컬 데이터가 있다면, 클라우드에 최초 1회 업로드 진행
-                if (state.transactions.length > 0 || state.issues.length > 0 || state.logs.length > 0) {
-                    isInitialLoading = false;
-                    saveState(); // 빈 클라우드에 현재 상태 저장
-                }
             }
         } catch (e) {
             console.error("❌ 데이터 불러오기 실패:", e);
@@ -205,13 +214,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDetailTables(); // 상세가계부 렌더링 추가
         renderSavingsItems(); // 새로 추가한 자산/적금 렌더링
         updateStats();
-
-        // 총 보유자산 클릭 이벤트 추가
-        const totalAssetBadge = document.querySelector('.total-asset-badge');
-        if (totalAssetBadge) {
-            totalAssetBadge.style.cursor = 'pointer';
-            totalAssetBadge.onclick = openTotalAssetModal;
-        }
     }
 
     // 보안을 위한 문자열 이스케이프 함수 (XSS 방어)
@@ -308,8 +310,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
         document.getElementById('total-savings').textContent = `${totalSavings.toLocaleString()}원`;
 
-        // 총 보유자산 (적금/예금 합산 산출액)
-        const totalAsset = getCalculatedTotalAsset();
+        // 총 보유자산
+        const totalAsset = state.transactions.filter(t => t.type === 'asset').reduce((sum, t) => sum + t.amount, 0);
         const totalAssetStatsNewEl = document.getElementById('total-asset-stats-new');
         if (totalAssetStatsNewEl) totalAssetStatsNewEl.textContent = `${totalAsset.toLocaleString()}원`;
 
@@ -345,15 +347,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        updateCharts(monthlyExpense, monthlySavings, currentDetailPersonal, currentDetailShared);
+        updateCharts(totalExpense, totalSavings, totalDetailPersonal, totalDetailShared);
     }
 
     function updateCharts(totalExpense, totalSavings, detailPersonal, detailShared) {
-        const currentMonth = state.viewDates.account;
-        const salaryDay = state.salaryDay || 1;
-        const range = getDateRangeForMonth(currentMonth, salaryDay);
-        const rangeTrans = state.transactions.filter(t => t.date >= range.start && t.date <= range.end);
-
         const getCtx = (id) => {
             const el = document.getElementById(id);
             return el ? el.getContext('2d') : null;
@@ -366,19 +363,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
 
-        // 이번 달 기준 데이터 취합 (All-time이 아닌 현재 범위 기준)
-        const expenseData = state.categories.expense.map(cat => ({
-            name: cat,
-            value: rangeTrans.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
-        }));
+        // 소비 데이터 취합 (카테고리별 + 상세가계부 합산)
+        const expenseData = state.categories.expense.map(catObj => {
+            const catName = typeof catObj === 'string' ? catObj : catObj.name;
+            return {
+                name: catName,
+                value: state.transactions.filter(t => t.type === 'expense' && t.cat === catName).reduce((sum, t) => sum + t.amount, 0)
+            };
+        });
 
         if (detailPersonal > 0) expenseData.push({ name: '상세(개인)', value: detailPersonal });
         if (detailShared > 0) expenseData.push({ name: '상세(공용)', value: detailShared });
 
-        const savingsData = state.categories.savings.map(cat => ({
-            name: cat,
-            value: rangeTrans.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
-        }));
+        const savingsData = state.categories.savings.map(cat => {
+            const catName = typeof cat === 'string' ? cat : cat.name;
+            return {
+                name: catName,
+                value: state.transactions.filter(t => t.type === 'savings' && t.cat === catName).reduce((sum, t) => sum + t.amount, 0)
+            };
+        });
 
         const medianCutColors = [
             '#644ca2', // Purple
@@ -444,27 +447,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const container = document.getElementById(containerId);
         if (!container) return;
         container.innerHTML = '';
-
-        const salaryDay = (type === 'account') ? (state.salaryDay || 1) : 1;
-        const monthKey = state.viewDates[type];
-        const [year, month] = monthKey.split('-').map(Number);
-        const range = getDateRangeForMonth(monthKey, salaryDay);
-
-        const startDate = new Date(range.start);
-        const endDate = new Date(range.end);
-        const todayStr = formatLocalDate(new Date());
+        const [year, month] = state.viewDates[type].split('-').map(Number);
 
         const header = document.createElement('div');
         header.className = 'calendar-header';
-
-        // 타이틀 표시: 집계 기준일이 1일이 아니면 기간을 함께 표시하거나 "X월분"으로 표시
-        let titleHtml = `${year}년 ${month}월`;
-        if (type === 'account' && salaryDay !== 1) {
-            titleHtml = `${month}월분 지불 회차`;
-        }
-
         header.innerHTML = `
-            <h3>${titleHtml} <button class="date-picker-btn">📅</button><input type="month" class="hidden-date-input" value="${monthKey}"></h3>
+            <h3>${year}년 ${month}월 <button class="date-picker-btn">📅</button><input type="month" class="hidden-date-input" value="${state.viewDates[type]}"></h3>
             <div class="nav-controls"><button class="nav-btn prev-btn">&#8249;</button><button class="nav-btn next-btn">&#8250;</button></div>
         `;
         header.querySelector('.prev-btn').onclick = () => changeMonth(type, -1);
@@ -475,31 +463,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         container.appendChild(header);
 
         const grid = document.createElement('div'); grid.className = 'calendar-grid';
-        ['일', '월', '화', '수', '목', '금', '토'].forEach(d => {
-            const h = document.createElement('div');
-            h.className = 'calendar-day-head';
-            h.textContent = d;
-            grid.appendChild(h);
-        });
+        ['일', '월', '화', '수', '목', '금', '토'].forEach(d => { const h = document.createElement('div'); h.className = 'calendar-day-head'; h.textContent = d; grid.appendChild(h); });
 
-        // 시작 요일에 맞춰 빈 칸 삽입
-        const firstDayOfWeek = startDate.getDay();
-        for (let i = 0; i < firstDayOfWeek; i++) grid.appendChild(document.createElement('div'));
+        const first = new Date(year, month - 1, 1).getDay();
+        const days = new Date(year, month, 0).getDate();
+        for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
 
-        // 기간 내의 모든 날짜 렌더링
-        let currentIter = new Date(startDate);
-        while (currentIter <= endDate) {
+        const now = new Date();
+        for (let d = 1; d <= days; d++) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
-            const fullDate = formatLocalDate(currentIter);
-            const d = currentIter.getDate();
-            const m = currentIter.getMonth() + 1; // 달이 바뀌는 경우 가독성을 위해 월 표시 가능
-
-            // 다른 달의 날짜인 경우 살짝 다른 스타일이나 월 표시 추가 (선택사항)
-            const isDifferentMonth = (m !== month);
-            const dateLabel = isDifferentMonth ? `<span style="font-size:0.7em; opacity:0.7;">${m}/</span>${d}` : d;
-
-            dayEl.innerHTML = `<span>${dateLabel}</span><div class="day-content"></div>`;
+            const fullDate = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            dayEl.innerHTML = `<span>${d}</span><div class="day-content"></div>`;
             const contentDiv = dayEl.querySelector('.day-content');
 
             if (type === 'account') {
@@ -511,30 +486,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (exp > 0) contentDiv.innerHTML += `<div class="day-label label-expense">-${exp.toLocaleString()}</div>`;
                 if (sav > 0) contentDiv.innerHTML += `<div class="day-label label-savings">S:${sav.toLocaleString()}</div>`;
 
+                // 가계부 내역이 있으면 클릭 가능하게 설정
                 if (dayTrans.length > 0) {
                     dayEl.classList.add('clickable-day');
                     dayEl.onclick = () => openAccountDayModal(fullDate);
                 }
             } else {
+                // Issues Rendering
                 const dayIssues = state.issues.filter(i => i.date === fullDate);
                 dayIssues.forEach(issue => {
                     contentDiv.innerHTML += `<div class="day-label label-issue ${issue.checked ? 'checked' : ''}">${issue.text}</div>`;
                 });
+
+                // Life Logs Rendering
                 const dayLogs = state.logs.filter(l => l.date === fullDate);
                 dayLogs.forEach(log => {
                     contentDiv.innerHTML += `<div class="day-label label-life">${log.item}(${log.qty})</div>`;
                 });
+
+                // Make day clickable if there's any content
                 if (dayIssues.length > 0 || dayLogs.length > 0) {
                     dayEl.classList.add('clickable-day');
                     dayEl.onclick = () => openLifeDayModal(fullDate);
                 }
             }
-
-            if (fullDate === todayStr) dayEl.classList.add('today');
+            if (year === now.getFullYear() && month === (now.getMonth() + 1) && d === now.getDate()) dayEl.classList.add('today');
             grid.appendChild(dayEl);
-
-            // 다음 날로 이동
-            currentIter.setDate(currentIter.getDate() + 1);
         }
         container.appendChild(grid);
     }
@@ -568,53 +545,108 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Category Card System ---
     let draggedItem = null; let draggedType = null;
     function renderCategoryGrids() {
-        const currentMonth = state.viewDates.account;
-        const salaryDay = state.salaryDay || 1;
-        const range = getDateRangeForMonth(currentMonth, salaryDay);
-
         const renderGrid = (type, id) => {
             const grid = document.getElementById(id); if (!grid) return; grid.innerHTML = '';
-            state.categories[type].forEach((cat, index) => {
-                // 집계 기간(range) 내의 내역들만 합산
-                const amount = state.transactions.filter(t =>
-                    t.type === type &&
-                    t.cat === cat &&
-                    t.date >= range.start &&
-                    t.date <= range.end
-                ).reduce((s, t) => s + t.amount, 0);
+            state.categories[type].forEach((catObj, index) => {
+                const catName = typeof catObj === 'string' ? catObj : catObj.name;
+                const budget = typeof catObj === 'string' ? 0 : (catObj.budget || 0);
 
-                const card = document.createElement('div'); card.className = 'category-card'; card.draggable = true; card.dataset.index = index; card.dataset.type = type;
-                card.innerHTML = `<button class="card-delete-btn" title="삭제">&times;</button><span class="cat-name">${cat}</span><span class="cat-amount">${amount.toLocaleString()}원</span>`;
+                const amount = state.transactions.filter(t => t.type === type && t.cat === catName && t.date.startsWith(state.viewDates.account)).reduce((s, t) => s + t.amount, 0);
+
+                const card = document.createElement('div');
+                card.className = 'category-card';
+                card.draggable = true;
+                card.dataset.index = index;
+                card.dataset.type = type;
+
+                if (type === 'expense') {
+                    card.innerHTML = `
+                        <button class="card-delete-btn" title="삭제">&times;</button>
+                        <span class="cat-name">${catName}</span>
+                        <div class="cat-budget-usage">
+                            <span class="label">예산:</span> <strong>${budget.toLocaleString()}원</strong>
+                        </div>
+                        <div class="cat-usage">
+                            <span class="label">사용:</span> <span class="amount">${amount.toLocaleString()}원</span>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <button class="card-delete-btn" title="삭제">&times;</button>
+                        <span class="cat-name">${catName}</span>
+                        <span class="cat-amount">${amount.toLocaleString()}원</span>
+                    `;
+                }
+
                 card.ondragstart = (e) => { draggedItem = index; draggedType = type; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
                 card.ondragend = () => { card.classList.remove('dragging'); document.querySelectorAll('.category-grid').forEach(g => g.classList.remove('drag-over')); };
                 card.ondragover = (e) => { e.preventDefault(); if (draggedType === type) grid.classList.add('drag-over'); };
                 card.ondrop = (e) => { e.preventDefault(); if (draggedType === type && draggedItem !== null) { const [moved] = state.categories[type].splice(draggedItem, 1); state.categories[type].splice(index, 0, moved); saveState(); renderCategoryGrids(); } draggedItem = null; draggedType = null; };
-                card.onclick = (e) => { if (e.target.classList.contains('card-delete-btn')) { if (confirm(`'${cat}' 카테고리를 삭제하시겠습니까?`)) { state.categories[type] = state.categories[type].filter(c => c !== cat); state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === cat)); saveState(); renderCategoryGrids(); refreshCalendars(); } } else { openModal(cat, type); } };
+
+                card.onclick = (e) => {
+                    if (e.target.classList.contains('card-delete-btn')) {
+                        if (confirm(`'${catName}' 카테고리를 삭제하시겠습니까?`)) {
+                            state.categories[type] = state.categories[type].filter(c => (typeof c === 'string' ? c : c.name) !== catName);
+                            state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === catName));
+                            saveState(); renderCategoryGrids(); refreshCalendars();
+                        }
+                    } else {
+                        if (type === 'expense') {
+                            openCategoryDetailModal(catName, type);
+                        } else {
+                            openModal(catName, type);
+                        }
+                    }
+                };
                 grid.appendChild(card);
             });
         };
         renderGrid('expense', 'expense-category-grid'); renderGrid('savings', 'savings-category-grid');
     }
 
-    document.getElementById('add-expense-cat').onclick = () => { const n = prompt('새 소비 카테고리 이름:'); if (n && !state.categories.expense.includes(n)) { state.categories.expense.push(n); saveState(); renderCategoryGrids(); } };
-    document.getElementById('add-savings-cat').onclick = () => { const n = prompt('새 저축 카테고리 이름:'); if (n && !state.categories.savings.includes(n)) { state.categories.savings.push(n); saveState(); renderCategoryGrids(); } };
+    document.getElementById('add-expense-cat').onclick = () => {
+        const n = prompt('새 소비 카테고리 이름:');
+        if (n && !state.categories.expense.some(c => c.name === n)) {
+            state.categories.expense.push({ name: n, budget: 0 });
+            saveState(); renderCategoryGrids();
+        }
+    };
+    document.getElementById('add-savings-cat').onclick = () => {
+        const n = prompt('새 저축 카테고리 이름:');
+        if (n && !state.categories.savings.includes(n)) {
+            state.categories.savings.push(n);
+            saveState(); renderCategoryGrids();
+        }
+    };
 
     // --- Modal Logic ---
     const modal = document.getElementById('entry-modal');
     const closeBtn = document.querySelector('#entry-modal .close-modal');
     const saveBtn = document.getElementById('save-entry');
 
-    const accIncomeCard = document.getElementById('acc-income-card');
-    if (accIncomeCard) accIncomeCard.onclick = () => openModal('수입', 'income');
-    const accAssetCard = document.getElementById('acc-asset-card');
-    if (accAssetCard) accAssetCard.onclick = () => openModal('자산', 'asset');
+    document.getElementById('acc-income-card').onclick = () => openModal('수입', 'income');
+    document.getElementById('acc-asset-card').onclick = () => openModal('자산', 'asset');
 
     function openModal(category, type) {
         currentModalTarget = { category, type };
         document.getElementById('modal-title').textContent = `${category} - 내역 추가`;
-        document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
+        document.getElementById('modal-date').value = formatLocalDate(new Date()); // 오늘 날짜 기본값
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
+
+        // 태그 공간 초기화 및 표시 여부 결정
+        const tagGroup = document.getElementById('tag-selection-group');
+        const tagContainer = document.getElementById('modal-tags');
+        selectedTag = null;
+
+        if (type === 'expense') {
+            tagGroup.style.display = 'block';
+            tagContainer.innerHTML = presetTags.map(tag => `
+                <div class="tag-item" onclick="selectModalTag(this, '${tag}')">${tag}</div>
+            `).join('');
+        } else {
+            tagGroup.style.display = 'none';
+        }
 
         // 소비/저축 카테고리인 경우만 이름 변경 버튼 표시
         const renameBtn = document.getElementById('btn-rename-cat');
@@ -628,15 +660,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderModalHistory();
     }
 
+    window.selectModalTag = (el, tag) => {
+        document.querySelectorAll('.tag-item').forEach(item => item.classList.remove('active'));
+        if (selectedTag === tag) {
+            selectedTag = null;
+        } else {
+            selectedTag = tag;
+            el.classList.add('active');
+        }
+    };
+
     function closeModal() { modal.classList.remove('active'); }
     closeBtn.onclick = closeModal;
-    // 모달 외부 클릭 시 닫기 (이벤트 위임 사용)
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal-backdrop')) {
-            e.target.classList.remove('active');
-            if (e.target === modal) closeModal(); // entry-modal의 경우 추가 로직 실행
-        }
-    });
+    window.onclick = (e) => {
+        if (e.target === modal) closeModal();
+        if (e.target === document.getElementById('acc-day-modal')) document.getElementById('acc-day-modal').classList.remove('active');
+        if (e.target === document.getElementById('life-day-modal')) document.getElementById('life-day-modal').classList.remove('active');
+        if (e.target === document.getElementById('category-detail-modal')) closeCategoryDetailModal();
+    };
 
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
@@ -647,9 +688,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                     group.items.push({ id: crypto.randomUUID(), detail: n, amount: a, memo: '' });
                 }
             } else {
-                state.transactions.push({ id: Date.now(), date: d, name: n, cat: currentModalTarget.category, amount: a, type: currentModalTarget.type });
+                state.transactions.push({
+                    id: Date.now(),
+                    date: d,
+                    name: n,
+                    cat: currentModalTarget.category,
+                    amount: a,
+                    type: currentModalTarget.type,
+                    tag: selectedTag
+                });
             }
-            saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); renderWeddingCosts(); updateWeddingSummary(); document.getElementById('modal-name').value = ''; document.getElementById('modal-amount').value = '';
+            saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); renderWeddingCosts(); updateWeddingSummary();
+            document.getElementById('modal-name').value = '';
+            document.getElementById('modal-amount').value = '';
+
+            if (currentCatDetail) renderCategoryDetailContent(); // 상세 창 열려있으면 갱신
         }
     };
 
@@ -671,17 +724,119 @@ document.addEventListener('DOMContentLoaded', async () => {
         const oldName = oldId;
         const newName = prompt('새 카테고리 이름을 입력하세요:', oldName);
         if (newName && newName !== oldName) {
-            if (state.categories[type].includes(newName)) {
+            const exists = state.categories[type].some(c => (typeof c === 'string' ? c : c.name) === newName);
+            if (exists) {
                 alert('이미 존재하는 카테고리 이름입니다.');
                 return;
             }
-            const idx = state.categories[type].indexOf(oldName);
-            if (idx !== -1) state.categories[type][idx] = newName;
+
+            if (type === 'expense') {
+                const catObj = state.categories[type].find(c => c.name === oldName);
+                if (catObj) catObj.name = newName;
+            } else {
+                const idx = state.categories[type].indexOf(oldName);
+                if (idx !== -1) state.categories[type][idx] = newName;
+            }
+
             state.transactions.forEach(t => { if (t.type === type && t.cat === oldName) t.cat = newName; });
             currentModalTarget.category = newName;
             document.getElementById('modal-title').textContent = `${newName} - 내역 추가`;
             saveState(); refreshAllUI();
         }
+    };
+
+    // --- Category Detail Modal Logic ---
+    window.openCategoryDetailModal = (name, type) => {
+        currentCatDetail = { name, type };
+        document.getElementById('cat-detail-title').textContent = `${name} 상세`;
+
+        const catObj = state.categories[type].find(c => c.name === name);
+        const budgetInput = document.getElementById('cat-budget-input');
+        budgetInput.value = catObj ? catObj.budget : 0;
+        budgetInput.oninput = (e) => {
+            if (catObj) catObj.budget = parseInt(e.target.value) || 0;
+            saveState();
+            renderCategoryGrids();
+        };
+
+        const searchInput = document.getElementById('cat-detail-search');
+        searchInput.value = '';
+
+        document.getElementById('check-all-entries').checked = false;
+        document.getElementById('category-detail-modal').classList.add('active');
+        renderCategoryDetailContent();
+    };
+
+    window.closeCategoryDetailModal = () => {
+        document.getElementById('category-detail-modal').classList.remove('active');
+        currentCatDetail = null;
+    };
+
+    window.renderCategoryDetailContent = () => {
+        if (!currentCatDetail) return;
+        const { name, type } = currentCatDetail;
+        const search = document.getElementById('cat-detail-search').value.toLowerCase();
+        const tbody = document.getElementById('cat-detail-table-body');
+        tbody.innerHTML = '';
+
+        let entries = state.transactions.filter(t => t.type === type && t.cat === name && t.date.startsWith(state.viewDates.account));
+
+        if (search) {
+            entries = entries.filter(t => t.name.toLowerCase().includes(search) || (t.tag && t.tag.toLowerCase().includes(search)));
+        }
+
+        // 정렬
+        entries.sort((a, b) => {
+            return catSortOrder === 'desc' ? b.id - a.id : a.id - b.id;
+        });
+
+        let total = 0;
+        entries.forEach(entry => {
+            total += entry.amount;
+            const tr = document.createElement('tr');
+            const tagBadge = entry.tag ? `<span class="tag-badge">${entry.tag}</span>` : '';
+            tr.innerHTML = `
+                <td><input type="checkbox" class="entry-check" value="${entry.id}"></td>
+                <td>${entry.date.slice(5)}</td>
+                <td style="font-weight: 500;">${tagBadge}${entry.name}</td>
+                <td style="text-align: right; font-weight: 600;">${entry.amount.toLocaleString()}원</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('cat-detail-total-amount').textContent = `${total.toLocaleString()}원`;
+    };
+
+    window.toggleSortOrder = () => {
+        catSortOrder = (catSortOrder === 'desc' ? 'asc' : 'desc');
+        document.getElementById('btn-sort-date').textContent = (catSortOrder === 'desc' ? '최신순' : '오래된순');
+        renderCategoryDetailContent();
+    };
+
+    window.toggleAllCheckboxes = (source) => {
+        const checkboxes = document.querySelectorAll('.entry-check');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+    };
+
+    window.deleteSelectedEntries = () => {
+        const checked = document.querySelectorAll('.entry-check:checked');
+        if (checked.length === 0) {
+            alert('삭제할 내역을 선택해주세요.');
+            return;
+        }
+        if (confirm(`선택한 ${checked.length}개의 내역을 삭제하시겠습니까?`)) {
+            const idsToDelete = Array.from(checked).map(cb => parseInt(cb.value));
+            state.transactions = state.transactions.filter(t => !idsToDelete.includes(t.id));
+            saveState();
+            renderCategoryDetailContent();
+            renderCategoryGrids();
+            refreshCalendars();
+        }
+    };
+
+    window.openEntryFromDetail = () => {
+        if (!currentCatDetail) return;
+        openModal(currentCatDetail.name, currentCatDetail.type);
     };
 
     function renderModalHistory() {
@@ -714,20 +869,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const currentMonth = state.viewDates.account;
-        const salaryDay = state.salaryDay || 1;
-        const range = getDateRangeForMonth(currentMonth, salaryDay);
-
         const entries = state.transactions.filter(t => {
             const isMatchCat = (t.cat === currentModalTarget.category);
             const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
             const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
-
-            // 집계 기준일 기반 범위 체크
-            const isInRange = t.date >= range.start && t.date <= range.end;
-
+            const isMonthMatch = t.date.startsWith(state.viewDates.account);
             if (currentModalTarget.type === 'asset') return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
-            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isInRange;
+            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isMonthMatch;
         });
         entries.sort((a, b) => b.id - a.id).forEach(entry => {
             const item = document.createElement('div'); item.className = 'mini-entry';
@@ -803,16 +951,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- Life Day Modal ---
-    const lifeDayModal = document.getElementById('life-day-modal');
-    const lifeDayCloseBtn = document.querySelector('#life-day-modal .close-modal');
-    if (lifeDayCloseBtn) {
-        lifeDayCloseBtn.onclick = () => lifeDayModal.classList.remove('active');
-    }
-
     function openLifeDayModal(date) {
+        const modal = document.getElementById('life-day-modal');
         document.getElementById('life-day-title').textContent = `${date} 상세 내역`;
         renderLifeDayContent(date);
-        lifeDayModal.classList.add('active');
+        modal.classList.add('active');
     }
 
     function renderLifeDayContent(date) {
@@ -965,29 +1108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td style="font-weight:600;">${item.item}</td>
                 <td>${item.qty}</td>
                 <td>${parseInt(item.amount || 0).toLocaleString()}원</td>
-                <td style="display: flex; gap: 4px; justify-content: center;">
-                    <button class="edit-stock-btn">수정</button>
-                    <button class="delete-stock-btn">삭제</button>
-                </td>
+                <td><button class="delete-stock-btn">삭제</button></td>
             `;
-
-            tr.querySelector('.edit-stock-btn').onclick = () => {
-                const newItem = prompt('내용 수정:', item.item);
-                const newQty = prompt('수량 수정:', item.qty);
-                const newAmount = prompt('금액 수정:', item.amount || 0);
-
-                if (newItem !== null && newQty !== null && newAmount !== null) {
-                    const target = state.logs.find(l => l.id === item.id);
-                    if (target) {
-                        target.item = newItem;
-                        target.qty = newQty;
-                        target.amount = newAmount;
-                        saveState();
-                        renderStockList();
-                        refreshCalendars(); // 달력 내용도 변경될 수 있으므로 갱신
-                    }
-                }
-            };
 
             tr.querySelector('.delete-stock-btn').onclick = () => {
                 if (confirm('보유목록에서 이 항목을 삭제하시겠습니까?\n(달력 기록은 유지됩니다.)')) {
@@ -1043,7 +1165,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             authOverlay.classList.remove('active');
             document.getElementById('btn-logout').style.display = 'block';
             document.getElementById('btn-reset-all').style.display = 'block';
-            document.getElementById('btn-delete-account').style.display = 'block';
             // 최초 로그인/세션 복원 시에만 클라우드 데이터 불러오기
             // TOKEN_REFRESHED 시에는 달력이 이번 달로 튀지 않도록 스킵
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
@@ -1054,7 +1175,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             authOverlay.classList.add('active');
             document.getElementById('btn-logout').style.display = 'none';
             document.getElementById('btn-reset-all').style.display = 'none';
-            document.getElementById('btn-delete-account').style.display = 'none';
             // 로그아웃 시 상태 초기화 (원하는 경우)
             resetState();
             refreshAllUI();
@@ -1072,37 +1192,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    document.getElementById('btn-delete-account').onclick = async () => {
-        if (confirm('정말 탈퇴하시겠습니까?\n데이터베이스에 저장된 모든 기록이 즉시 삭제되며 복구할 수 없습니다.')) {
-            try {
-                // 1. 데이터베이스에서 내용 삭제
-                const { error: deleteError } = await supabaseClient
-                    .from('user_categories')
-                    .delete()
-                    .eq('user_id', currentUser.id);
-
-                if (deleteError) throw deleteError;
-
-                // 2. 로그아웃 (이후 로그인/회원가입 창으로 이동됨)
-                await supabaseClient.auth.signOut();
-
-                // 3. 로컬 데이터 초기화 및 새로고침
-                localStorage.removeItem('life-state');
-                alert('회원탈퇴 및 데이터 삭제 처리가 완료되었습니다.');
-                location.reload();
-            } catch (e) {
-                console.error("데이터 삭제 실패:", e);
-                alert("삭제 처리 중 에러가 발생했습니다.");
-            }
-        }
-    };
-
     function resetState() {
         state = {
             transactions: [],
             categories: {
-                expense: ['생활비', '집', '개인생활비'],
-                savings: ['적금', '주식', '청약']
+                expense: ['식비', '생활', '교통', '여가'],
+                savings: ['적금', '투자', '비상금']
             },
             logs: [],
             issues: [],
@@ -1141,10 +1236,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const password = document.getElementById('auth-password').value;
         if (!email || !password) {
             authMsg.textContent = "이메일과 비밀번호를 입력해주세요.";
-            return;
-        }
-        if (password.length < 6) {
-            authMsg.textContent = "비밀번호는 최소 6자 이상 입력해주세요.";
             return;
         }
         const { error } = await supabaseClient.auth.signUp({ email, password });
@@ -1601,34 +1692,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let currentEditingSavingsId = null;
 
-    const savingsTypeSelect = document.getElementById('savings-type');
-    if (savingsTypeSelect) {
-        savingsTypeSelect.addEventListener('change', (e) => {
-            const isInstallment = e.target.value === '적금';
-            const targetGroup = document.getElementById('savings-target-group');
-            const targetLabel = document.getElementById('savings-target-label');
-
-            if (isInstallment) {
-                targetGroup.style.display = 'none';
-            } else {
-                targetGroup.style.display = 'flex';
-                targetLabel.textContent = '예치 금액';
-            }
-
-            document.getElementById('savings-monthly-group').style.display = isInstallment ? 'flex' : 'none';
-            document.getElementById('savings-interest-group').style.display = 'flex'; // 예금, 적금 모두 이자율 표시
-        });
-    }
-
     if (addSavingsBtn) {
         addSavingsBtn.onclick = () => {
             currentEditingSavingsId = null;
-            document.getElementById('savings-type').value = '적금';
-            if (savingsTypeSelect) savingsTypeSelect.dispatchEvent(new Event('change'));
             document.getElementById('savings-name').value = '';
             document.getElementById('savings-target-amount').value = '';
-            document.getElementById('savings-monthly-amount').value = '';
-            document.getElementById('savings-interest').value = '';
             document.getElementById('savings-start-date').value = formatLocalDate(new Date());
             document.getElementById('savings-end-date').value = '';
             savingsModal.classList.add('active');
@@ -1636,28 +1704,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (closeSavingsModalBtn) closeSavingsModalBtn.onclick = () => savingsModal.classList.remove('active');
 
-
+    // 모달 배경 클릭
+    window.addEventListener('click', (e) => {
+        if (e.target === savingsModal) savingsModal.classList.remove('active');
+    });
 
     if (saveSavingsBtn) {
-        saveSavingsBtn.onclick = async () => {
-            const type = document.getElementById('savings-type').value;
+        saveSavingsBtn.onclick = () => {
             const name = document.getElementById('savings-name').value.trim();
-            const monthlyAmount = parseInt(document.getElementById('savings-monthly-amount').value) || 0;
-            const interestRate = parseFloat(document.getElementById('savings-interest').value) || 0;
+            const targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
             const startDate = document.getElementById('savings-start-date').value;
             const endDate = document.getElementById('savings-end-date').value;
-
-            let targetAmount = 0;
-            if (type === '적금') {
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                if (start && end) {
-                    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
-                    targetAmount = monthlyAmount * Math.max(0, months);
-                }
-            } else {
-                targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
-            }
 
             if (!name || !startDate || !endDate) return alert('모든 항목을 입력해주세요.');
             if (new Date(startDate) >= new Date(endDate)) return alert('만기일은 시작일보다 늦어야 합니다.');
@@ -1667,22 +1724,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentEditingSavingsId) {
                 const item = state.savingsItems.find(i => i.id === currentEditingSavingsId);
                 if (item) {
-                    item.type = type;
                     item.name = name;
                     item.targetAmount = targetAmount;
-                    item.monthlyAmount = monthlyAmount;
-                    item.interestRate = interestRate;
                     item.startDate = startDate;
                     item.endDate = endDate;
                 }
             } else {
                 state.savingsItems.push({
                     id: crypto.randomUUID(),
-                    type,
                     name,
                     targetAmount,
-                    monthlyAmount,
-                    interestRate,
                     startDate,
                     endDate,
                     createdAt: Date.now()
@@ -1690,7 +1741,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             savingsModal.classList.remove('active');
-            await saveState();
+            saveState();
             renderSavingsItems();
         };
     }
@@ -1700,12 +1751,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!item) return;
 
         currentEditingSavingsId = id;
-        document.getElementById('savings-type').value = item.type || '적금';
-        if (savingsTypeSelect) savingsTypeSelect.dispatchEvent(new Event('change'));
         document.getElementById('savings-name').value = item.name;
         document.getElementById('savings-target-amount').value = item.targetAmount || 0;
-        document.getElementById('savings-monthly-amount').value = item.monthlyAmount || '';
-        document.getElementById('savings-interest').value = item.interestRate || '';
         document.getElementById('savings-start-date').value = item.startDate;
         document.getElementById('savings-end-date').value = item.endDate;
 
@@ -1713,34 +1760,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (modal) modal.classList.add('active');
     };
 
-    window.deleteSavingsItem = async (id) => {
+    window.deleteSavingsItem = (id) => {
         if (!confirm('이 기록을 삭제하시겠습니까?')) return;
         state.savingsItems = state.savingsItems.filter(i => i.id !== id);
-        await saveState();
+        saveState();
         renderSavingsItems();
     };
 
     function renderSavingsItems() {
         const listEl = document.getElementById('savings-list');
         if (!listEl) return;
-
-        // 버튼 클릭 이벤트 위임 (한 번만 설정)
-        if (!listEl.dataset.listener) {
-            listEl.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.btn-edit-savings');
-                const deleteBtn = e.target.closest('.btn-delete-savings');
-
-                if (editBtn) {
-                    const id = editBtn.dataset.id;
-                    window.editSavingsItem(id);
-                } else if (deleteBtn) {
-                    const id = deleteBtn.dataset.id;
-                    window.deleteSavingsItem(id);
-                }
-            });
-            listEl.dataset.listener = 'true';
-        }
-
         state.savingsItems = state.savingsItems || [];
 
         if (state.savingsItems.length === 0) {
@@ -1766,32 +1795,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const isDone = remainingDays <= 0;
 
-            const typeLabel = item.type || '적금';
-            let extraInfo = '';
-
-            // 추가 정보 구성 (이자율은 공통, 월 납입액은 적금만)
-            const interestInfo = item.interestRate ? ` · 이율 ${item.interestRate}%` : '';
-            const monthlyInfo = (typeLabel === '적금' && item.monthlyAmount) ? `월 ${item.monthlyAmount.toLocaleString()}원 납입` : '';
-
-            if (monthlyInfo || interestInfo) {
-                extraInfo = `
-                    <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 4px;">
-                        ${monthlyInfo}${interestInfo}
-                    </div>
-                `;
-            }
-
             return `
                 <div class="savings-item-card">
                     <div class="savings-card-header">
                         <div class="savings-card-title">
-                            <h5><span style="color: var(--primary); font-size: 0.85em;">[${typeLabel}]</span> ${safeHTML(item.name)}</h5>
-                            <div class="savings-card-amount">${typeLabel === '적금' ? '목표' : '예치'}: ${item.targetAmount ? item.targetAmount.toLocaleString() + '원' : '미정'}</div>
-                            ${extraInfo}
+                            <h5>${safeHTML(item.name)}</h5>
+                            <div class="savings-card-amount">목표: ${item.targetAmount ? item.targetAmount.toLocaleString() + '원' : '금액 미정'}</div>
                         </div>
                         <div class="savings-card-actions">
-                            <button class="btn-edit-savings" data-id="${item.id}" title="수정">✏️</button>
-                            <button class="btn-delete-savings" data-id="${item.id}" title="삭제">❌</button>
+                            <button onclick="editSavingsItem('${item.id}')" title="수정">✏️</button>
+                            <button onclick="deleteSavingsItem('${item.id}')" title="삭제">❌</button>
                         </div>
                     </div>
                     
@@ -1813,84 +1826,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         }).join('');
-    }
-
-    const totalAssetModal = document.getElementById('total-asset-modal');
-    const closeTotalAssetModalBtn = document.getElementById('close-total-asset-modal');
-    if (closeTotalAssetModalBtn) closeTotalAssetModalBtn.onclick = () => totalAssetModal.classList.remove('active');
-
-
-
-    function getCalculatedTotalAsset() {
-        let totalSum = 0;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const items = state.savingsItems || [];
-
-        items.forEach(item => {
-            const start = new Date(item.startDate);
-            const type = item.type || '적금';
-
-            if (type === '적금') {
-                const monthsPassed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
-                let currentValue = (Math.max(0, monthsPassed) + 1) * (item.monthlyAmount || 0);
-
-                const endD = new Date(item.endDate);
-                const totalMonths = (endD.getFullYear() - start.getFullYear()) * 12 + (endD.getMonth() - start.getMonth());
-                const maxVal = totalMonths * (item.monthlyAmount || 0);
-                if (currentValue > maxVal) currentValue = maxVal;
-                totalSum += currentValue;
-            } else {
-                totalSum += (item.targetAmount || 0);
-            }
-        });
-        return totalSum;
-    }
-
-    window.openTotalAssetModal = () => {
-        const body = document.getElementById('total-asset-detail-body');
-        const sumEl = document.getElementById('total-asset-sum-modal');
-        if (!body || !sumEl) return;
-
-        body.innerHTML = '';
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        state.savingsItems = state.savingsItems || [];
-
-        state.savingsItems.forEach(item => {
-            let currentValue = 0;
-            const start = new Date(item.startDate);
-            const type = item.type || '적금';
-
-            if (type === '적금') {
-                // 적금: (시작부터 오늘까지 경과된 개월 수 + 1) * 월 납입액
-                const monthsPassed = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
-                currentValue = (Math.max(0, monthsPassed) + 1) * (item.monthlyAmount || 0);
-
-                // 만기 금액(자동계산된 목표액)을 초과하지 않도록 제한
-                const startD = new Date(item.startDate);
-                const endD = new Date(item.endDate);
-                const totalMonths = (endD.getFullYear() - startD.getFullYear()) * 12 + (endD.getMonth() - startD.getMonth());
-                const maxVal = totalMonths * (item.monthlyAmount || 0);
-                if (currentValue > maxVal) currentValue = maxVal;
-            } else {
-                // 예금: 예치 금액 그대로
-                currentValue = item.targetAmount || 0;
-            }
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><span class="day-label ${type === '적금' ? 'label-savings' : 'label-income'}" style="width: auto; display: inline-block; padding: 2px 8px;">${type}</span></td>
-                <td style="font-weight: 500;">${safeHTML(item.name)}</td>
-                <td style="text-align: right; font-weight: 700;">${currentValue.toLocaleString()}원</td>
-            `;
-            body.appendChild(row);
-        });
-
-        const totalSum = getCalculatedTotalAsset();
-        sumEl.textContent = `${totalSum.toLocaleString()}원`;
-        totalAssetModal.classList.add('active');
     }
 
     refreshAllUI();
