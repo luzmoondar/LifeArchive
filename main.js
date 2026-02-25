@@ -72,7 +72,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             { id: 'group3', title: '', items: [] }
         ],
         weddingGifts: [],
-        salaryDay: 1 // 한 달 시작일 설정 (기본 1일)
+        salaryDay: 1, // 한 달 시작일 설정 (기본 1일)
+        categoryBudgets: {} // { '식비': 500000, ... }
     };
 
     // --- 이번 달로 날짜 초기화 헬퍼 ---
@@ -92,9 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         state = { ...state, ...parsed };
 
         // Wedding 데이터 이관 지원
-        state.weddingCosts = parsed.weddingCosts || state.weddingCosts;
         state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
         state.savingsItems = parsed.savingsItems || [];
+        state.categoryBudgets = parsed.categoryBudgets || {};
 
         // 접속 시에는 무조건 "이번 달"로 고정
         resetViewDatesToToday();
@@ -583,13 +584,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                     t.date <= range.end
                 ).reduce((s, t) => s + t.amount, 0);
 
+                const budget = state.categoryBudgets[cat] || 0;
+                let budgetHtml = '';
+                let gaugeHtml = '';
+                
+                if (type === 'expense') {
+                    const pct = budget > 0 ? Math.min(100, (amount / budget) * 100) : 0;
+                    const statusClass = pct >= 100 ? 'danger' : (pct >= 80 ? 'warning' : '');
+                    budgetHtml = `<div class="budget-info">예산: ${budget.toLocaleString()}원</div>`;
+                    gaugeHtml = `
+                        <div class="cat-gauge">
+                            <div class="cat-gauge-fill ${statusClass}" style="width: ${pct}%"></div>
+                        </div>
+                    `;
+                }
+
                 const card = document.createElement('div'); card.className = 'category-card'; card.draggable = true; card.dataset.index = index; card.dataset.type = type;
-                card.innerHTML = `<button class="card-delete-btn" title="삭제">&times;</button><span class="cat-name">${cat}</span><span class="cat-amount">${amount.toLocaleString()}원</span>`;
+                card.innerHTML = `
+                    <button class="card-delete-btn" title="삭제">&times;</button>
+                    <span class="cat-name">${cat}</span>
+                    <span class="cat-amount">${amount.toLocaleString()}원</span>
+                    ${budgetHtml}
+                    ${gaugeHtml}
+                `;
                 card.ondragstart = (e) => { draggedItem = index; draggedType = type; card.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
                 card.ondragend = () => { card.classList.remove('dragging'); document.querySelectorAll('.category-grid').forEach(g => g.classList.remove('drag-over')); };
                 card.ondragover = (e) => { e.preventDefault(); if (draggedType === type) grid.classList.add('drag-over'); };
                 card.ondrop = (e) => { e.preventDefault(); if (draggedType === type && draggedItem !== null) { const [moved] = state.categories[type].splice(draggedItem, 1); state.categories[type].splice(index, 0, moved); saveState(); renderCategoryGrids(); } draggedItem = null; draggedType = null; };
-                card.onclick = (e) => { if (e.target.classList.contains('card-delete-btn')) { if (confirm(`'${cat}' 카테고리를 삭제하시겠습니까?`)) { state.categories[type] = state.categories[type].filter(c => c !== cat); state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === cat)); saveState(); renderCategoryGrids(); refreshCalendars(); } } else { openModal(cat, type); } };
+                card.onclick = (e) => { 
+                    if (e.target.classList.contains('card-delete-btn')) { 
+                        if (confirm(`'${cat}' 카테고리를 삭제하시겠습니까?`)) { 
+                            state.categories[type] = state.categories[type].filter(c => c !== cat); 
+                            state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === cat)); 
+                            saveState(); renderCategoryGrids(); refreshCalendars(); 
+                        } 
+                    } else if (type === 'expense') {
+                        openCategoryDetailModal(cat);
+                    } else {
+                        openModal(cat, type);
+                    } 
+                };
                 grid.appendChild(card);
             });
         };
@@ -609,12 +643,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const accAssetCard = document.getElementById('acc-asset-card');
     if (accAssetCard) accAssetCard.onclick = () => openModal('자산', 'asset');
 
-    function openModal(category, type) {
+    function openModal(category, type, date = null) {
         currentModalTarget = { category, type };
         document.getElementById('modal-title').textContent = `${category} - 내역 추가`;
-        document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
+        document.getElementById('modal-date').value = date || `${state.viewDates.account}-01`;
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
+        if (document.getElementById('modal-tag')) document.getElementById('modal-tag').value = '기타';
 
         // 소비/저축 카테고리인 경우만 이름 변경 버튼 표시
         const renameBtn = document.getElementById('btn-rename-cat');
@@ -625,21 +660,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         modal.classList.add('active');
+        document.body.classList.add('modal-open');
         renderModalHistory();
     }
 
-    function closeModal() { modal.classList.remove('active'); }
+    function closeModal() { 
+        modal.classList.remove('active'); 
+        document.body.classList.remove('modal-open');
+    }
     closeBtn.onclick = closeModal;
-    // 모달 외부 클릭 시 닫기 (이벤트 위임 사용)
+    
+    // 모달 외부 클릭 시 닫기 제한 (배경 클릭으로 꺼지지 않게 설정)
+    // 단, .close-modal 버튼이나 특정 닫기 버튼은 작동해야 함
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal-backdrop')) {
-            e.target.classList.remove('active');
-            if (e.target === modal) closeModal(); // entry-modal의 경우 추가 로직 실행
+            // 배경 클릭 시 닫기 기능 제거 또는 선택적 적용
+            // 사용자가 불편하다고 했으므로 여기서 아무것도 하지 않음 (또는 alert 표시 가능)
+            console.log("배경 클릭으로 닫기가 제한되었습니다.");
         }
     });
 
+    // 상세 모달 닫기 버튼들
+    const catDetailModal = document.getElementById('category-detail-modal');
+    document.getElementById('close-cat-detail').onclick = () => {
+        catDetailModal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+    };
+    
+    document.getElementById('close-acc-day-modal').onclick = () => {
+        document.getElementById('acc-day-modal').classList.remove('active');
+        document.body.classList.remove('modal-open');
+    };
+
     saveBtn.onclick = () => {
-        const d = document.getElementById('modal-date').value, n = document.getElementById('modal-name').value, a = parseInt(document.getElementById('modal-amount').value) || 0;
+        const d = document.getElementById('modal-date').value, 
+              n = document.getElementById('modal-name').value, 
+              a = parseInt(document.getElementById('modal-amount').value) || 0,
+              t = document.getElementById('modal-tag') ? document.getElementById('modal-tag').value : '기타';
+
         if (d && n && a > 0) {
             if (currentModalTarget.type === 'wedding') {
                 const group = state.weddingCosts.find(g => g.id === currentModalTarget.category);
@@ -647,9 +705,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     group.items.push({ id: crypto.randomUUID(), detail: n, amount: a, memo: '' });
                 }
             } else {
-                state.transactions.push({ id: Date.now(), date: d, name: n, cat: currentModalTarget.category, amount: a, type: currentModalTarget.type });
+                state.transactions.push({ 
+                    id: Date.now(), 
+                    date: d, 
+                    name: n, 
+                    cat: currentModalTarget.category, 
+                    amount: a, 
+                    type: currentModalTarget.type,
+                    tag: t 
+                });
             }
-            saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); renderWeddingCosts(); updateWeddingSummary(); document.getElementById('modal-name').value = ''; document.getElementById('modal-amount').value = '';
+            saveState(); 
+            renderModalHistory(); 
+            refreshCalendars(); 
+            renderCategoryGrids(); 
+            renderWeddingCosts(); 
+            updateWeddingSummary();
+            
+            // 상세 모달이 열려있다면 새로고침
+            if (catDetailModal.classList.contains('active')) renderCategoryDetail(currentModalTarget.category);
+            
+            document.getElementById('modal-name').value = ''; 
+            document.getElementById('modal-amount').value = '';
         }
     };
 
@@ -1120,11 +1197,112 @@ document.addEventListener('DOMContentLoaded', async () => {
             ],
             weddingGifts: [],
             salaryDay: 1,
-            savingsItems: [] // 자산 및 만기 현황 아이템
+            savingsItems: [], // 자산 및 만기 현황 아이템
+            categoryBudgets: {}
         };
         localStorage.removeItem('life-state');
     }
 
+// --- Category Detail Modal Implementation ---
+let currentDetailCat = '';
+let detailSortOrder = 'newest'; // 'newest' or 'oldest'
+
+function openCategoryDetailModal(catName) {
+    currentDetailCat = catName;
+    const modal = document.getElementById('category-detail-modal');
+    document.getElementById('cat-detail-title').textContent = `'${catName}' 상세 내역`;
+    document.getElementById('cat-budget-input').value = state.categoryBudgets[catName] || '';
+    document.getElementById('cat-search-input').value = '';
+    
+    renderCategoryDetail(catName);
+    modal.classList.add('active');
+    document.body.classList.add('modal-open');
+}
+
+// 예산 저장
+document.getElementById('save-cat-budget').onclick = () => {
+    const b = parseInt(document.getElementById('cat-budget-input').value) || 0;
+    state.categoryBudgets[currentDetailCat] = b;
+    saveState();
+    renderCategoryGrids();
+    alert('예산이 저장되었습니다.');
+};
+
+// 검색 및 정렬 이벤트
+document.getElementById('cat-search-input').oninput = () => renderCategoryDetail(currentDetailCat);
+document.getElementById('btn-sort-newest').onclick = () => {
+    detailSortOrder = 'newest';
+    document.getElementById('btn-sort-newest').classList.add('active');
+    document.getElementById('btn-sort-oldest').classList.remove('active');
+    renderCategoryDetail(currentDetailCat);
+};
+document.getElementById('btn-sort-oldest').onclick = () => {
+    detailSortOrder = 'oldest';
+    document.getElementById('btn-sort-oldest').classList.add('active');
+    document.getElementById('btn-sort-newest').classList.remove('active');
+    renderCategoryDetail(currentDetailCat);
+};
+
+// 선택 삭제
+document.getElementById('btn-delete-selected').onclick = () => {
+    const checked = Array.from(document.querySelectorAll('.trans-checkbox:checked')).map(cb => Number(cb.value));
+    if (checked.length === 0) return alert('삭제할 항목을 선택해주세요.');
+    
+    if (confirm(`${checked.length}개의 내역을 삭제하시겠습니까?`)) {
+        state.transactions = state.transactions.filter(t => !checked.includes(t.id));
+        saveState();
+        refreshCalendars();
+        renderCategoryGrids();
+        renderCategoryDetail(currentDetailCat);
+    }
+};
+
+// 전체 선택
+document.getElementById('check-all-trans').onclick = (e) => {
+    document.querySelectorAll('.trans-checkbox').forEach(cb => cb.checked = e.target.checked);
+};
+
+// 내역 추가 버튼 (상세 모달 내)
+document.getElementById('btn-add-detail-entry').onclick = () => {
+    openModal(currentDetailCat, 'expense');
+};
+
+function renderCategoryDetail(catName) {
+    const listBody = document.getElementById('cat-trans-list');
+    const search = document.getElementById('cat-search-input').value.toLowerCase();
+    const currentMonth = state.viewDates.account;
+    const salaryDay = state.salaryDay || 1;
+    const range = getDateRangeForMonth(currentMonth, salaryDay);
+
+    let filtered = state.transactions.filter(t => 
+        t.type === 'expense' && 
+        t.cat === catName &&
+        t.date >= range.start &&
+        t.date <= range.end &&
+        (t.name.toLowerCase().includes(search) || (t.tag && t.tag.toLowerCase().includes(search)))
+    );
+
+    // 정렬
+    filtered.sort((a, b) => {
+        return detailSortOrder === 'newest' 
+            ? b.date.localeCompare(a.date) || b.id - a.id
+            : a.date.localeCompare(b.date) || a.id - b.id;
+    });
+
+    listBody.innerHTML = filtered.map(t => `
+        <tr>
+            <td><input type="checkbox" class="trans-checkbox" value="${t.id}"></td>
+            <td>${t.date.slice(5)}</td>
+            <td>
+                <div style="font-weight:600;">${safeHTML(t.name)}</div>
+                <div class="trans-tag">${safeHTML(t.tag || '기타')}</div>
+            </td>
+            <td style="text-align: right; font-weight:700;">${t.amount.toLocaleString()}원</td>
+        </tr>
+    `).join('') || '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">내역이 없습니다.</td></tr>';
+    
+    document.getElementById('check-all-trans').checked = false;
+}
     document.getElementById('btn-login').onclick = async () => {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
