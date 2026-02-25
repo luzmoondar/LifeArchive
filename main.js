@@ -130,7 +130,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 state = {
                     ...state,
                     ...cloudExpense,
-                    detailData: { ...state.detailData, ...(cloudExpense.detailData || {}) },
                     savingsItems: cloudExpense.savingsItems || state.savingsItems || []
                 };
 
@@ -316,10 +315,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        updateCharts(monthlyExpense, monthlySavings, currentDetailPersonal, currentDetailShared);
+        updateCharts(monthlyExpense, monthlySavings);
     }
 
-    function updateCharts(totalExpense, totalSavings, detailPersonal, detailShared) {
+    function updateCharts(totalExpense, totalSavings) {
         const currentMonth = state.viewDates.account;
         const salaryDay = state.salaryDay || 1;
         const range = getDateRangeForMonth(currentMonth, salaryDay);
@@ -342,9 +341,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             name: cat,
             value: rangeTrans.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
-
-        if (detailPersonal > 0) expenseData.push({ name: '상세(개인)', value: detailPersonal });
-        if (detailShared > 0) expenseData.push({ name: '상세(공용)', value: detailShared });
 
         const savingsData = state.categories.savings.map(cat => ({
             name: cat,
@@ -929,6 +925,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentMonth = state.viewDates.life;
         state.issues
             .filter(issue => !issue.date || issue.date.startsWith(currentMonth))
+            .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
             .forEach(issue => {
                 const li = document.createElement('li'); li.className = `todo-item ${issue.checked ? 'checked' : ''}`;
                 li.innerHTML = `
