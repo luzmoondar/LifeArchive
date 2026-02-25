@@ -389,6 +389,7 @@
         <div class="modal-content card">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-modal-back" class="modal-back-btn" style="display: none;">⬅️</button>
                     <h4 id="modal-title">내역 추가</h4>
                     <button id="btn-rename-cat" class="action-icon-btn" title="카테고리명 변경"
                         style="display: none;">✏️</button>
@@ -426,10 +427,6 @@
             </div>
             <div class="modal-footer">
                 <button id="save-entry" class="primary-btn">저장하기</button>
-            </div>
-            <div class="modal-history">
-                <h5>기존 내역</h5>
-                <div id="modal-entry-list" class="mini-entry-list"></div>
             </div>
         </div>
     </div>
@@ -473,20 +470,16 @@
                     </div>
                 </div>
 
-                <!-- Search & Sort Controls -->
+                <!-- Search, Delete, Sort Controls -->
                 <div class="detail-controls mb-3">
                     <div class="search-box">
-                        <input type="text" id="cat-search-input" placeholder="내역 검색...">
+                        <input type="text" id="cat-search-input" placeholder="내용 검색...">
                     </div>
+                    <button id="btn-delete-selected" class="delete-selected-btn">선택삭제</button>
                     <div class="sort-buttons">
-                        <button id="btn-sort-newest" class="sort-btn active">최신순</button>
-                        <button id="btn-sort-oldest" class="sort-btn">오래된순</button>
+                        <button id="btn-sort-newest" class="sort-btn active">최신순 ⬇️</button>
+                        <button id="btn-sort-oldest" class="sort-btn" style="display:none;">오래된순 ⬆️</button>
                     </div>
-                </div>
-
-                <!-- Bulk Action -->
-                <div class="bulk-actions mb-2">
-                    <button id="btn-delete-selected" class="delete-selected-btn">선택 삭제</button>
                 </div>
 
                 <!-- Transaction List Table -->
@@ -631,7 +624,7 @@
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="main.js?v=20260224_3"></script>
+    <script src="main.js?v=20260225_1"></script>
 </body>
 
 </html>

@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const budget = state.categoryBudgets[cat] || 0;
                 let budgetHtml = '';
                 let gaugeHtml = '';
-                
+
                 if (type === 'expense') {
                     const pct = budget > 0 ? Math.min(100, (amount / budget) * 100) : 0;
                     const statusClass = pct >= 100 ? 'danger' : (pct >= 80 ? 'warning' : '');
@@ -611,18 +611,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 card.ondragend = () => { card.classList.remove('dragging'); document.querySelectorAll('.category-grid').forEach(g => g.classList.remove('drag-over')); };
                 card.ondragover = (e) => { e.preventDefault(); if (draggedType === type) grid.classList.add('drag-over'); };
                 card.ondrop = (e) => { e.preventDefault(); if (draggedType === type && draggedItem !== null) { const [moved] = state.categories[type].splice(draggedItem, 1); state.categories[type].splice(index, 0, moved); saveState(); renderCategoryGrids(); } draggedItem = null; draggedType = null; };
-                card.onclick = (e) => { 
-                    if (e.target.classList.contains('card-delete-btn')) { 
-                        if (confirm(`'${cat}' 카테고리를 삭제하시겠습니까?`)) { 
-                            state.categories[type] = state.categories[type].filter(c => c !== cat); 
-                            state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === cat)); 
-                            saveState(); renderCategoryGrids(); refreshCalendars(); 
-                        } 
+                card.onclick = (e) => {
+                    if (e.target.classList.contains('card-delete-btn')) {
+                        if (confirm(`'${cat}' 카테고리를 삭제하시겠습니까?`)) {
+                            state.categories[type] = state.categories[type].filter(c => c !== cat);
+                            state.transactions = state.transactions.filter(t => !(t.type === type && t.cat === cat));
+                            saveState(); renderCategoryGrids(); refreshCalendars();
+                        }
                     } else if (type === 'expense') {
                         openCategoryDetailModal(cat);
                     } else {
                         openModal(cat, type);
-                    } 
+                    }
                 };
                 grid.appendChild(card);
             });
@@ -659,17 +659,38 @@ document.addEventListener('DOMContentLoaded', async () => {
             renameBtn.style.display = 'none';
         }
 
+        // 상세 내역 모달이 열려있는지 확인하여 뒤로가기 버튼 표시
+        const backBtn = document.getElementById('btn-modal-back');
+        const detailModal = document.getElementById('category-detail-modal');
+        if (detailModal && detailModal.classList.contains('active')) {
+            backBtn.style.display = 'inline-block';
+        } else {
+            backBtn.style.display = 'none';
+        }
+
         modal.classList.add('active');
         document.body.classList.add('modal-open');
-        renderModalHistory();
+        // 모달창 상단으로 스크롤 초기화
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTop = 0;
     }
 
-    function closeModal() { 
-        modal.classList.remove('active'); 
-        document.body.classList.remove('modal-open');
+    // 뒤로가기 버튼 클릭 시 (단순히 현재 모달만 닫음)
+    document.getElementById('btn-modal-back').onclick = () => {
+        modal.classList.remove('active');
+        // 상세 모달이 열려있으므로 body.modal-open은 유지
+    };
+
+    function closeModal() {
+        modal.classList.remove('active');
+        // 만약 상세 모달 등 다른 모달이 열려있지 않다면 스크롤 락 해제
+        const otherModalActive = !!document.querySelector('.modal-backdrop.active:not(#entry-modal)');
+        if (!otherModalActive) {
+            document.body.classList.remove('modal-open');
+        }
     }
     closeBtn.onclick = closeModal;
-    
+
     // 모달 외부 클릭 시 닫기 제한 (배경 클릭으로 꺼지지 않게 설정)
     // 단, .close-modal 버튼이나 특정 닫기 버튼은 작동해야 함
     window.addEventListener('click', (e) => {
@@ -686,17 +707,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         catDetailModal.classList.remove('active');
         document.body.classList.remove('modal-open');
     };
-    
+
     document.getElementById('close-acc-day-modal').onclick = () => {
         document.getElementById('acc-day-modal').classList.remove('active');
         document.body.classList.remove('modal-open');
     };
 
     saveBtn.onclick = () => {
-        const d = document.getElementById('modal-date').value, 
-              n = document.getElementById('modal-name').value, 
-              a = parseInt(document.getElementById('modal-amount').value) || 0,
-              t = document.getElementById('modal-tag') ? document.getElementById('modal-tag').value : '기타';
+        const d = document.getElementById('modal-date').value,
+            n = document.getElementById('modal-name').value,
+            a = parseInt(document.getElementById('modal-amount').value) || 0,
+            t = document.getElementById('modal-tag') ? document.getElementById('modal-tag').value : '기타';
 
         if (d && n && a > 0) {
             if (currentModalTarget.type === 'wedding') {
@@ -705,27 +726,26 @@ document.addEventListener('DOMContentLoaded', async () => {
                     group.items.push({ id: crypto.randomUUID(), detail: n, amount: a, memo: '' });
                 }
             } else {
-                state.transactions.push({ 
-                    id: Date.now(), 
-                    date: d, 
-                    name: n, 
-                    cat: currentModalTarget.category, 
-                    amount: a, 
+                state.transactions.push({
+                    id: Date.now(),
+                    date: d,
+                    name: n,
+                    cat: currentModalTarget.category,
+                    amount: a,
                     type: currentModalTarget.type,
-                    tag: t 
+                    tag: t
                 });
             }
-            saveState(); 
-            renderModalHistory(); 
-            refreshCalendars(); 
-            renderCategoryGrids(); 
-            renderWeddingCosts(); 
+            saveState();
+            refreshCalendars();
+            renderCategoryGrids();
+            renderWeddingCosts();
             updateWeddingSummary();
-            
+
             // 상세 모달이 열려있다면 새로고침
             if (catDetailModal.classList.contains('active')) renderCategoryDetail(currentModalTarget.category);
-            
-            document.getElementById('modal-name').value = ''; 
+
+            document.getElementById('modal-name').value = '';
             document.getElementById('modal-amount').value = '';
         }
     };
@@ -761,67 +781,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    function renderModalHistory() {
-        const list = document.getElementById('modal-entry-list');
-        list.innerHTML = '';
 
-        if (currentModalTarget.type === 'wedding') {
-            const group = state.weddingCosts.find(g => g.id === currentModalTarget.category);
-            if (!group) return;
-            group.items.forEach((entry, idx) => {
-                const item = document.createElement('div'); item.className = 'mini-entry';
-                item.innerHTML = `
-                    <div class="entry-info">
-                        <strong>${entry.detail || '제목 없음'}</strong>
-                        <span class="entry-date">${entry.memo || ''}</span>
-                    </div>
-                    <div class="entry-actions">
-                        <span class="amount-text">${(entry.amount || 0).toLocaleString()}원</span>
-                        <button class="delete-btn" title="삭제">&times;</button>
-                    </div>
-                `;
-                item.querySelector('.delete-btn').onclick = () => {
-                    if (confirm('이 내역을 삭제하시겠습니까?')) {
-                        group.items.splice(idx, 1);
-                        saveState(); renderModalHistory(); renderWeddingCosts(); updateWeddingSummary();
-                    }
-                };
-                list.appendChild(item);
-            });
-            return;
-        }
-
-        const currentMonth = state.viewDates.account;
-        const salaryDay = state.salaryDay || 1;
-        const range = getDateRangeForMonth(currentMonth, salaryDay);
-
-        const entries = state.transactions.filter(t => {
-            const isMatchCat = (t.cat === currentModalTarget.category);
-            const isMatchIncome = (currentModalTarget.type === 'income' && t.type === 'income');
-            const isMatchAsset = (currentModalTarget.type === 'asset' && t.type === 'asset');
-
-            // 집계 기준일 기반 범위 체크
-            const isInRange = t.date >= range.start && t.date <= range.end;
-
-            if (currentModalTarget.type === 'asset') return (isMatchCat || isMatchAsset) && t.type === currentModalTarget.type;
-            return (isMatchCat || isMatchIncome || isMatchAsset) && t.type === currentModalTarget.type && isInRange;
-        });
-        entries.sort((a, b) => b.id - a.id).forEach(entry => {
-            const item = document.createElement('div'); item.className = 'mini-entry';
-            item.innerHTML = `
-                <div class="entry-info">
-                    <strong>${entry.name}</strong>
-                    <span class="entry-date">${entry.date}</span>
-                </div>
-                <div class="entry-actions">
-                    <span class="amount-text">${entry.amount.toLocaleString()}원</span>
-                    <button class="delete-btn" title="삭제">&times;</button>
-                </div>
-            `;
-            item.querySelector('.delete-btn').onclick = () => { if (confirm('이 내역을 삭제하시겠습니까?')) { state.transactions = state.transactions.filter(t => t.id !== entry.id); saveState(); renderModalHistory(); refreshCalendars(); renderCategoryGrids(); } };
-            list.appendChild(item);
-        });
-    }
 
     // --- Account Day Modal ---
     const accDayModal = document.getElementById('acc-day-modal');
@@ -1203,93 +1163,101 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.removeItem('life-state');
     }
 
-// --- Category Detail Modal Implementation ---
-let currentDetailCat = '';
-let detailSortOrder = 'newest'; // 'newest' or 'oldest'
+    // --- Category Detail Modal Implementation ---
+    let currentDetailCat = '';
+    let detailSortOrder = 'newest'; // 'newest' or 'oldest'
 
-function openCategoryDetailModal(catName) {
-    currentDetailCat = catName;
-    const modal = document.getElementById('category-detail-modal');
-    document.getElementById('cat-detail-title').textContent = `'${catName}' 상세 내역`;
-    document.getElementById('cat-budget-input').value = state.categoryBudgets[catName] || '';
-    document.getElementById('cat-search-input').value = '';
-    
-    renderCategoryDetail(catName);
-    modal.classList.add('active');
-    document.body.classList.add('modal-open');
-}
+    function openCategoryDetailModal(catName) {
+        currentDetailCat = catName;
+        const modal = document.getElementById('category-detail-modal');
+        document.getElementById('cat-detail-title').textContent = `'${catName}' 상세 내역`;
+        document.getElementById('cat-budget-input').value = state.categoryBudgets[catName] || '';
+        document.getElementById('cat-search-input').value = '';
 
-// 예산 저장
-document.getElementById('save-cat-budget').onclick = () => {
-    const b = parseInt(document.getElementById('cat-budget-input').value) || 0;
-    state.categoryBudgets[currentDetailCat] = b;
-    saveState();
-    renderCategoryGrids();
-    alert('예산이 저장되었습니다.');
-};
+        // 정렬 상태 초기화
+        detailSortOrder = 'newest';
+        document.getElementById('btn-sort-newest').style.display = 'inline-block';
+        document.getElementById('btn-sort-oldest').style.display = 'none';
 
-// 검색 및 정렬 이벤트
-document.getElementById('cat-search-input').oninput = () => renderCategoryDetail(currentDetailCat);
-document.getElementById('btn-sort-newest').onclick = () => {
-    detailSortOrder = 'newest';
-    document.getElementById('btn-sort-newest').classList.add('active');
-    document.getElementById('btn-sort-oldest').classList.remove('active');
-    renderCategoryDetail(currentDetailCat);
-};
-document.getElementById('btn-sort-oldest').onclick = () => {
-    detailSortOrder = 'oldest';
-    document.getElementById('btn-sort-oldest').classList.add('active');
-    document.getElementById('btn-sort-newest').classList.remove('active');
-    renderCategoryDetail(currentDetailCat);
-};
-
-// 선택 삭제
-document.getElementById('btn-delete-selected').onclick = () => {
-    const checked = Array.from(document.querySelectorAll('.trans-checkbox:checked')).map(cb => Number(cb.value));
-    if (checked.length === 0) return alert('삭제할 항목을 선택해주세요.');
-    
-    if (confirm(`${checked.length}개의 내역을 삭제하시겠습니까?`)) {
-        state.transactions = state.transactions.filter(t => !checked.includes(t.id));
-        saveState();
-        refreshCalendars();
-        renderCategoryGrids();
-        renderCategoryDetail(currentDetailCat);
+        renderCategoryDetail(catName);
+        modal.classList.add('active');
+        document.body.classList.add('modal-open');
+        // 모달창 상단으로 스크롤 초기화
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTop = 0;
     }
-};
 
-// 전체 선택
-document.getElementById('check-all-trans').onclick = (e) => {
-    document.querySelectorAll('.trans-checkbox').forEach(cb => cb.checked = e.target.checked);
-};
+    // 예산 저장
+    document.getElementById('save-cat-budget').onclick = () => {
+        const b = parseInt(document.getElementById('cat-budget-input').value) || 0;
+        state.categoryBudgets[currentDetailCat] = b;
+        saveState();
+        renderCategoryGrids();
+        alert('예산이 저장되었습니다.');
+    };
 
-// 내역 추가 버튼 (상세 모달 내)
-document.getElementById('btn-add-detail-entry').onclick = () => {
-    openModal(currentDetailCat, 'expense');
-};
+    // 검색 및 정렬 이벤트
+    document.getElementById('cat-search-input').oninput = () => renderCategoryDetail(currentDetailCat);
+    document.getElementById('btn-sort-newest').onclick = () => {
+        detailSortOrder = 'oldest';
+        document.getElementById('btn-sort-newest').style.display = 'none';
+        document.getElementById('btn-sort-oldest').style.display = 'inline-block';
+        renderCategoryDetail(currentDetailCat);
+    };
+    document.getElementById('btn-sort-oldest').onclick = () => {
+        detailSortOrder = 'newest';
+        document.getElementById('btn-sort-oldest').style.display = 'none';
+        document.getElementById('btn-sort-newest').style.display = 'inline-block';
+        renderCategoryDetail(currentDetailCat);
+    };
 
-function renderCategoryDetail(catName) {
-    const listBody = document.getElementById('cat-trans-list');
-    const search = document.getElementById('cat-search-input').value.toLowerCase();
-    const currentMonth = state.viewDates.account;
-    const salaryDay = state.salaryDay || 1;
-    const range = getDateRangeForMonth(currentMonth, salaryDay);
+    // 선택 삭제
+    document.getElementById('btn-delete-selected').onclick = () => {
+        const checked = Array.from(document.querySelectorAll('.trans-checkbox:checked')).map(cb => Number(cb.value));
+        if (checked.length === 0) return alert('삭제할 항목을 선택해주세요.');
 
-    let filtered = state.transactions.filter(t => 
-        t.type === 'expense' && 
-        t.cat === catName &&
-        t.date >= range.start &&
-        t.date <= range.end &&
-        (t.name.toLowerCase().includes(search) || (t.tag && t.tag.toLowerCase().includes(search)))
-    );
+        if (confirm(`${checked.length}개의 내역을 삭제하시겠습니까?`)) {
+            state.transactions = state.transactions.filter(t => !checked.includes(t.id));
+            saveState();
+            refreshCalendars();
+            renderCategoryGrids();
+            renderCategoryDetail(currentDetailCat);
+        }
+    };
 
-    // 정렬
-    filtered.sort((a, b) => {
-        return detailSortOrder === 'newest' 
-            ? b.date.localeCompare(a.date) || b.id - a.id
-            : a.date.localeCompare(b.date) || a.id - b.id;
-    });
+    // 전체 선택
+    document.getElementById('check-all-trans').onclick = (e) => {
+        document.querySelectorAll('.trans-checkbox').forEach(cb => cb.checked = e.target.checked);
+    };
 
-    listBody.innerHTML = filtered.map(t => `
+    // 내역 추가 버튼 (상세 모달 내)
+    document.getElementById('btn-add-detail-entry').onclick = () => {
+        openModal(currentDetailCat, 'expense');
+    };
+
+    function renderCategoryDetail(catName) {
+        const listBody = document.getElementById('cat-trans-list');
+        const search = document.getElementById('cat-search-input').value.toLowerCase();
+        const currentMonth = state.viewDates.account;
+        const salaryDay = state.salaryDay || 1;
+        const range = getDateRangeForMonth(currentMonth, salaryDay);
+
+        let filtered = state.transactions.filter(t =>
+            t.type === 'expense' &&
+            t.cat === catName &&
+            t.date >= range.start &&
+            t.date <= range.end &&
+            (t.name.toLowerCase().includes(search) || (t.tag && t.tag.toLowerCase().includes(search)))
+        );
+
+        // 정렬
+        filtered.sort((a, b) => {
+            return detailSortOrder === 'newest'
+                ? b.date.localeCompare(a.date) || b.id - a.id
+                : a.date.localeCompare(b.date) || a.id - b.id;
+        });
+
+        listBody.innerHTML = filtered.map(t => `
         <tr>
             <td><input type="checkbox" class="trans-checkbox" value="${t.id}"></td>
             <td>${t.date.slice(5)}</td>
@@ -1300,9 +1268,9 @@ function renderCategoryDetail(catName) {
             <td style="text-align: right; font-weight:700;">${t.amount.toLocaleString()}원</td>
         </tr>
     `).join('') || '<tr><td colspan="4" style="text-align:center; padding:2rem; color:#94a3b8;">내역이 없습니다.</td></tr>';
-    
-    document.getElementById('check-all-trans').checked = false;
-}
+
+        document.getElementById('check-all-trans').checked = false;
+    }
     document.getElementById('btn-login').onclick = async () => {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;

@@ -576,6 +576,24 @@ body {
     display: flex;
 }
 
+#entry-modal {
+    z-index: 1100;
+}
+
+.modal-back-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    color: var(--text-light);
+    transition: transform 0.2s;
+}
+
+.modal-back-btn:hover {
+    transform: translateX(-3px);
+}
+
 .modal-content {
     width: 95%;
     max-width: var(--modal-width);
@@ -2195,35 +2213,35 @@ body.modal-open {
 
 .search-box input {
     width: 100%;
-    padding: 0.6rem 1rem;
-    border-radius: 0.75rem;
+    padding: 0.7rem 1.2rem;
+    border-radius: 12px;
     border: 1px solid #e4e7ea;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: white;
 }
 
 .sort-buttons {
     display: flex;
-    background: #f1f5f9;
-    padding: 4px;
-    border-radius: 0.5rem;
-    gap: 2px;
+    gap: 8px;
 }
 
 .sort-btn {
-    border: none;
-    background: transparent;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    border-radius: 0.4rem;
+    border: 1px solid #e4e7ea;
+    background: #f1f4f9;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 12px;
     cursor: pointer;
-    color: var(--text-light);
+    color: #334155;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .sort-btn.active {
-    background: white;
-    color: var(--primary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background: #f1f4f9;
+    color: #0f172a;
 }
 
 .bulk-actions {
@@ -2232,14 +2250,15 @@ body.modal-open {
 }
 
 .delete-selected-btn {
-    background: #fef2f2;
-    color: var(--danger);
-    border: 1px solid #fee2e2;
-    padding: 0.4rem 0.8rem;
-    border-radius: 0.5rem;
-    font-size: 0.8rem;
+    background: #f1f4f9;
+    color: #ef4444;
+    border: 1px solid #e4e7ea;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .detail-list-wrapper {
