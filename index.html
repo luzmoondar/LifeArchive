@@ -8,7 +8,7 @@
     <!-- 보안 강화를 위한 CSP 설정 -->
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net;">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260225_1">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
@@ -23,7 +23,7 @@
     <div class="app-container">
         <!-- New Header Area -->
         <div class="app-title-bar">
-            <h1>Life Archive</h1>
+            <h1>LifeArchive</h1>
             <div class="title-bar-actions">
                 <div id="sync-status-indicator" class="sync-status offline"><span></span> 대기 중</div>
                 <button onclick="manualSync()" class="sync-manual-btn">동기화</button>
@@ -102,57 +102,66 @@
 
                 <!-- Account Book Tab -->
                 <section id="account" class="tab-content">
-                    <div class="account-layout">
-                        <div class="calendar-side">
-                            <div id="account-calendar" class="calendar"></div>
+                    <div class="account-header-area">
+                        <!-- 1. Central Summary Section -->
+                        <div class="account-main-summary">
+                            <div class="acc-summary-item item-income clickable" id="acc-income-card">
+                                <span class="label">이번 달 총 수입</span>
+                                <div class="value"><span class="summary-icon">💰</span> <span
+                                        id="acc-monthly-income">0원</span></div>
+                            </div>
+                            <div class="acc-summary-divider"></div>
+                            <div class="acc-summary-item item-expense">
+                                <span class="label">이번 달 총 소비</span>
+                                <div class="value"><span class="summary-icon">💰</span> <span
+                                        id="acc-monthly-expense">0원</span></div>
+                            </div>
+                            <div class="acc-summary-divider"></div>
+                            <div class="acc-summary-item item-savings">
+                                <span class="label">이번 달 총 저축</span>
+                                <div class="value"><span class="summary-icon">💰</span> <span
+                                        id="acc-monthly-savings">0원</span></div>
+                            </div>
+                            <div class="acc-summary-divider"></div>
+                            <div class="acc-summary-item item-balance">
+                                <span class="label">이번 달 총 잔액</span>
+                                <div class="value"><span class="summary-icon">💰</span> <span
+                                        id="acc-monthly-balance">0원</span></div>
+                            </div>
                         </div>
-                        <div class="details-side">
-                            <div class="settings-row"
-                                style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-light); flex-wrap: wrap;">
-                                📅 한 달 기준: 매월
-                                <input type="number" id="setting-salary-day" value="1" min="1" max="28"
-                                    style="width: 45px; background: #f7f7ff; border: 1px solid #e4e7ea; color: var(--text); padding: 2px 5px; border-radius: 4px; text-align: center; font-weight: 600;">
+
+                        <!-- 2. Period Settings & Info -->
+                        <div class="account-control-panel">
+                            <div class="period-setting">
+                                📆 한 달 기준 : 매월
+                                <input type="number" id="setting-salary-day" value="1" min="1" max="28">
                                 일 시작
                             </div>
-                            <div id="salary-range-info"
-                                style="font-size: 0.75rem; color: var(--text-light); margin-bottom: 12px; display: none;">
-                            </div>
-                            <div class="summary-grid monthly-summary">
-                                <div class="summary-card income clickable" id="acc-income-card">
-                                    <h3>이번 달 총수입</h3>
-                                    <div class="amount" id="acc-monthly-income">0원</div>
-                                </div>
-                                <div class="summary-card expense">
-                                    <h3>이번 달 총소비</h3>
-                                    <div class="amount" id="acc-monthly-expense">0원</div>
-                                </div>
-                                <div class="summary-card savings">
-                                    <h3>이번 달 총저축</h3>
-                                    <div class="amount" id="acc-monthly-savings">0원</div>
-                                </div>
-                                <div class="summary-card balance">
-                                    <h3>이번 달 잔액</h3>
-                                    <div class="amount" id="acc-monthly-balance">0원</div>
-                                </div>
+                            <div id="salary-range-info" class="period-display">
+                                📊 집계기간 : 2026-01-25 ~ 2026-02-24
                             </div>
                         </div>
                     </div>
 
-                    <div class="account-bottom-sections mt-4">
-                        <div class="section-card">
+                    <!-- 3. Calendar Area -->
+                    <div class="account-calendar-box card mt-4">
+                        <div id="account-calendar" class="calendar"></div>
+                    </div>
+
+                    <!-- 4. Category Sections -->
+                    <div class="account-category-layout mt-4">
+                        <div class="section-card category-group card">
                             <div class="section-header">
-                                <h4>소비 카테고리</h4>
-                                <button class="add-btn" id="add-expense-cat">+</button>
+                                <h4>소비 카테고리 <button class="add-mini-btn" id="add-expense-cat">+</button></h4>
                             </div>
-                            <div id="expense-category-grid" class="category-grid"></div>
+                            <div id="expense-category-grid" class="category-grid thin-grid"></div>
                         </div>
 
-                        <div class="section-card mt-4">
+                        <div class="section-card category-group card">
                             <div class="section-header">
-                                <h4>저축 카테고리</h4>
-                                <button class="add-btn" id="add-savings-cat">+</button>
+                                <h4>저축 카테고리 <button class="add-mini-btn" id="add-savings-cat">+</button></h4>
                             </div>
-                            <div id="savings-category-grid" class="category-grid"></div>
+                            <div id="savings-category-grid" class="category-grid thin-grid"></div>
                         </div>
                     </div>
                 </section>
@@ -314,7 +323,7 @@
                     <label>내용</label>
                     <input type="text" id="modal-name" placeholder="내용을 입력하세요">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="modal-tag-group">
                     <label>태그</label>
                     <div id="modal-tag-chips" class="tag-chips">
                         <div class="tag-chip" data-value="생필품">생필품</div>
@@ -366,7 +375,10 @@
     <div id="category-detail-modal" class="modal-backdrop">
         <div class="modal-content card modal-wide">
             <div class="modal-header">
-                <h4 id="cat-detail-title">카테고리 상세</h4>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <h4 id="cat-detail-title">카테고리 상세</h4>
+                    <button id="btn-rename-detail-cat" class="action-icon-btn" title="카테고리명 변경">✏️</button>
+                </div>
                 <button class="close-modal" id="close-cat-detail">&times;</button>
             </div>
             <div class="modal-body">
@@ -398,7 +410,7 @@
                                 <th style="width: 30px;"><input type="checkbox" id="check-all-trans"></th>
                                 <th style="width: 80px;">날짜</th>
                                 <th>태그/내용</th>
-                                <th style="width: 100px; text-align: right;">금액</th>
+                                <th style="width: 120px; text-align: right;">금액</th>
                             </tr>
                         </thead>
                         <tbody id="cat-trans-list">

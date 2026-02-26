@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.1/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
+
 :root {
     --primary: #6366f1;
     --primary-hover: #4f46e5;
@@ -6,8 +8,8 @@
     --text: #1e293b;
     --text-light: #64748b;
     --border: #e2e8f0;
-    --success: #10b981;
-    --danger: #ef4444;
+    --success: #6dd83c;
+    --danger: #f5224f;
     --warning: #f59e0b;
     --glass: rgba(255, 255, 255, 0.7);
     --asset-orange: #ff7d0c;
@@ -34,7 +36,7 @@ input[type="number"] {
 }
 
 body {
-    font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+    font-family: 'Wanted Sans Variable', 'Wanted Sans', 'Outfit', 'Inter', -apple-system, sans-serif;
     background: linear-gradient(135deg, #f0f4ff 0%, #eef2ff 100%);
     color: var(--text);
     min-height: 100vh;
@@ -48,7 +50,6 @@ body {
     margin: 0 auto;
     background: #fff;
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 2rem;
     padding: 0;
     /* 패딩 제거 (내부 요소에서 처리) */
@@ -58,8 +59,8 @@ body {
 }
 
 .app-title-bar {
-    background: var(--primary);
-    padding: 1.5rem 2rem;
+    background: #6366f1;
+    padding: 1.5rem 4rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -73,7 +74,7 @@ body {
 }
 
 .app-body {
-    padding: 2rem;
+    padding: 4rem 4rem 7rem 4rem;
     /* 본문 영역 패딩 추가 */
 }
 
@@ -147,7 +148,7 @@ body {
 }
 
 .tab-btn.active {
-    background: var(--primary);
+    background: #6366f1;
     color: white;
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
@@ -201,7 +202,7 @@ body {
 }
 
 .income .amount {
-    color: var(--primary);
+    color: #008cff;
 }
 
 .expense .amount {
@@ -463,99 +464,145 @@ body {
 }
 
 /* Category Grid & Cards */
-.category-grid {
+/* Category Grid & Cards Redesign */
+.category-group {
+    padding: 0 !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.category-group .section-header {
+    background: #f7f7ff;
+    padding: 0.85rem;
+    margin-bottom: 0;
+    justify-content: center;
+    border-bottom: 1px solid #e4e7ea;
+}
+
+.category-group .section-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.thin-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0;
+    margin-top: 0;
+    border-top: none;
 }
 
 .category-card {
     background: white;
-    padding: 1.5rem;
-    border-radius: 1rem;
-    border: 1px solid #e4e7ea;
+    padding: 1.75rem 1rem;
+    border: none;
+    border-right: 1px solid #e4e7ea;
+    border-bottom: 1px solid #e4e7ea;
+    border-radius: 0;
     cursor: pointer;
     text-align: center;
-    transition: all 0.3s ease;
+    transition: background 0.2s;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
-}
-
-.category-card .budget-info {
-    font-size: 0.7rem;
-    color: var(--text-light);
-    margin-top: 2px;
-}
-
-.category-card .cat-gauge {
-    width: 100%;
-    height: 4px;
-    background: #f1f5f9;
-    border-radius: 2px;
-    margin-top: 4px;
-    overflow: hidden;
-}
-
-.category-card .cat-gauge-fill {
-    height: 100%;
-    background: var(--primary);
-    transition: width 0.3s ease;
-}
-
-.category-card .cat-gauge-fill.warning {
-    background: var(--warning);
-}
-
-.category-card .cat-gauge-fill.danger {
-    background: var(--danger);
+    justify-content: center;
+    height: 130px;
 }
 
 .category-card:hover {
-    transform: translateY(-5px);
-    border-color: #e2e8f0;
+    background-color: #f1f4f9;
 }
 
-.category-card.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-    background: #f1f5f9;
-    border-style: dashed;
+.category-card:nth-child(2n) {
+    border-right: none;
 }
 
-.category-grid.drag-over {
-    background: rgba(99, 102, 241, 0.05);
-    border-radius: 1rem;
-    transition: background 0.2s;
+.category-card:nth-child(n+3) {
+    border-bottom: none;
 }
 
 .category-card .cat-name {
-    font-weight: 600;
-    color: var(--text);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 6px;
 }
 
 .category-card .cat-amount {
-    font-size: 0.85rem;
-    color: var(--primary);
-    font-weight: 700;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 2px 0;
+    font-family: 'Wanted Sans Variable', 'Wanted Sans', 'Outfit', sans-serif;
+}
+
+/* Consumption vs Savings colors */
+.category-card[data-type="expense"] .cat-amount {
+    color: var(--danger);
+}
+
+.category-card[data-type="savings"] .cat-amount {
+    color: var(--success);
+}
+
+.category-card .budget-info {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+.category-card .cat-gauge {
+    display: none;
+    /* Hide gauge in this style */
 }
 
 .category-card .card-delete-btn {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 8px;
+    right: 8px;
     background: transparent;
     border: none;
-    color: #ccc;
+    color: #e2e8f0;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 1rem;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
 }
 
 .category-card .card-delete-btn:hover {
-    color: var(--danger);
+    color: #fca5a5;
+}
+
+.category-card.dragging {
+    opacity: 0.5;
+    background: #f8fafc;
+}
+
+.add-mini-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: #6366f1;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+    margin-top: 3px;
+}
+
+.add-mini-btn:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.4);
 }
 
 /* Modal Styles */
@@ -617,9 +664,12 @@ body {
     overflow-y: auto;
     background: white;
     border-radius: 1.5rem;
-    padding: 2rem;
+    /* Ultra rounded as in image */
+    padding: 3rem;
+    /* More spacious padding */
     position: relative;
     animation: modalPop 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes modalPop {
@@ -638,7 +688,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+    /* More spacing after title */
+}
+
+.modal-header h4 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #334155;
+    letter-spacing: -0.02em;
 }
 
 .close-modal {
@@ -650,24 +708,36 @@ body {
 }
 
 .modal-body .form-group {
-    margin-bottom: 1.2rem;
+    margin-bottom: 1.75rem;
+    /* More spacing between groups */
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.6rem;
 }
 
 .modal-body label {
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    color: var(--text-light);
+    color: #7c8db5;
+    /* Soft blue-gray color for labels */
+    padding-left: 5px;
 }
 
 .modal-body input,
 .modal-body select {
-    padding: 0.8rem;
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    font-size: 1rem;
+    padding: 1.1rem 1.4rem;
+    border: 1px solid #e4e9f2;
+    border-radius: 1.25rem;
+    /* Very rounded inputs */
+    font-size: 1.05rem;
+    background-color: #ffffff;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.modal-body input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .modal-footer {
@@ -692,19 +762,25 @@ body {
 }
 
 .primary-btn {
-    background: var(--primary);
+    background: #6366f1;
     color: white;
     border: none;
-    padding: 0.8rem 1.5rem;
-    border-radius: 0.75rem;
-    font-weight: 600;
+    padding: 0.8rem 1.8rem;
+    border-radius: 1rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .primary-btn:hover {
-    background: var(--primary-hover);
+    background: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(99, 102, 241, 0.35);
 }
+
+
 
 .modal-history {
     margin-top: 2rem;
@@ -1081,21 +1157,141 @@ body {
 .nav-btn:hover {
     background: var(--primary);
     color: white;
-    border-color: var(--primary);
-    transform: scale(1.05);
 }
 
-.date-picker-btn {
-    background: transparent;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: var(--text-light);
-    transition: color 0.2s;
-    padding: 0;
+/* Account Book Redesign Styles */
+.account-header-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.account-main-summary {
     display: flex;
     align-items: center;
+    justify-content: space-around;
+    padding: 1rem 0;
+    width: 100%;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
+
+.acc-summary-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0 1rem;
+    flex: 1;
+    transition: transform 0.2s;
+}
+
+.acc-summary-item.clickable {
+    cursor: pointer;
+}
+
+.acc-summary-item.clickable:hover {
+    transform: translateY(-2px);
+}
+
+.acc-summary-item .label {
+    font-size: 1rem;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.acc-summary-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.summary-icon {
+    font-size: 1.1rem;
+    opacity: 0.8;
+}
+
+.acc-summary-divider {
+    width: 1px;
+    height: 40px;
+    background: #f2f3f5;
+}
+
+.item-income .value {
+    color: #008cff;
+}
+
+.item-expense .value {
+    color: var(--danger);
+}
+
+.item-savings .value {
+    color: var(--success);
+}
+
+.item-balance .value {
+    color: var(--text);
+}
+
+.account-control-panel {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.5);
+    padding: 0.5rem 1.5rem;
+    border-radius: 2rem;
+}
+
+.period-setting {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.period-setting input {
+    width: 45px;
+    padding: 3px 6px;
+    border: 1px solid #e4e7ea;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 700;
+    background: white;
+    color: var(--text-light);
+    outline: none;
+}
+
+.period-display {
+    color: var(--text-light);
+}
+
+.account-calendar-box {
+    overflow: hidden;
+}
+
+.account-category-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.category-group {
+    background: white;
+    padding: 0;
+    border-radius: 1.5rem;
+    border: 1px solid #e4e7ea;
+    overflow: hidden;
+}
+
+
 
 .date-picker-btn:hover {
     color: var(--primary);
@@ -1167,18 +1363,18 @@ body {
 }
 
 .label-income {
-    background: #e4f9fc;
-    color: #005ed8;
+    background: #e7f5fe;
+    color: #008cff;
 }
 
 .label-expense {
-    background: #fde8e9;
-    color: #e01b24;
+    background: #ffe6ec;
+    color: #f5224f;
 }
 
 .label-savings {
-    background: #e8fdeb;
-    color: #20c638;
+    background: #f2ffeb;
+    color: #6dd83c;
 }
 
 .label-issue {
@@ -1198,8 +1394,8 @@ body {
 }
 
 .label-life {
-    background: #d7fcfa;
-    color: #0f766e;
+    background: #e9eaff;
+    color: #6366f1;
     /* 민트 계열 진한 텍스트로 가독성 확보 */
 }
 
@@ -1446,7 +1642,7 @@ body {
     background: #f1f5f9;
 }
 
-.stock-table .delete-stock-btn {
+.delete-stock-btn {
     background: #fee2e2;
     color: var(--danger);
     border: none;
@@ -1458,11 +1654,11 @@ body {
     transition: background 0.2s;
 }
 
-.stock-table .delete-stock-btn:hover {
+.delete-stock-btn:hover {
     background: #fecaca;
 }
 
-.stock-table .edit-stock-btn {
+.edit-stock-btn {
     background: #eef2ff;
     color: var(--primary);
     border: none;
@@ -1472,11 +1668,35 @@ body {
     font-size: 0.8rem;
     font-weight: 600;
     transition: background 0.2s;
-    margin-right: 4px;
 }
 
-.stock-table .edit-stock-btn:hover {
+.edit-stock-btn:hover {
     background: #e0e7ff;
+}
+
+/* Ensure these styles apply in specific containers as well */
+.todo-actions .edit-stock-btn,
+.log-actions .edit-stock-btn {
+    background: #eef2ff;
+    color: var(--primary);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.todo-actions .delete-stock-btn,
+.log-actions .delete-stock-btn {
+    background: #fee2e2;
+    color: var(--danger);
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
 }
 
 @media (max-width: 600px) {
@@ -2057,12 +2277,11 @@ body {
     align-items: center;
     font-size: 1.2rem;
     transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
 .add-btn:hover {
-    transform: scale(1.1);
-    background: #4f46e5;
+    background: var(--primary-hover);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.4);
 }
 
 .mb-4 {
@@ -2123,7 +2342,7 @@ body {
 }
 
 .savings-card-title h5 {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--text);
     margin: 0;
