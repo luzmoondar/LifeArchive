@@ -71,6 +71,14 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.app-title-bar h1 svg {
+    width: 2rem;
+    height: 2rem;
 }
 
 .app-body {
@@ -350,7 +358,7 @@ body {
 .section-card {
     background: white;
     padding: 1.5rem;
-    border-radius: 1.5rem;
+    border-radius: 0.75rem;
     border: 1px solid #e4e7ea;
     width: 100%;
 }
@@ -491,7 +499,7 @@ body {
 
 .thin-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0;
     margin-top: 0;
     border-top: none;
@@ -523,7 +531,8 @@ body {
     border-right: none;
 }
 
-.category-card:nth-child(n+3) {
+.category-card:nth-last-child(1),
+.category-card:nth-last-child(2) {
     border-bottom: none;
 }
 
@@ -995,7 +1004,7 @@ body {
 }
 
 .mt-4 {
-    margin-top: 1.5rem;
+    margin-top: 1.2rem;
 }
 
 .form-group-row {
@@ -1087,10 +1096,6 @@ body {
     text-align: center;
 }
 
-.mt-4 {
-    margin-top: 1.5rem;
-}
-
 .form-group {
     display: flex;
     flex-wrap: wrap;
@@ -1124,12 +1129,47 @@ body {
     padding: 0 0.5rem;
 }
 
+#monthly-memo:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
 .calendar-header h3 {
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 1.35rem;
+    font-weight: 800;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+.date-picker-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    padding: 0;
+}
+
+.date-picker-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.date-picker-btn:active {
+    transform: translateY(0);
+    background: #cbd5e1;
 }
 
 .nav-controls {
@@ -1164,8 +1204,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: 1.8rem;
 }
 
 .account-main-summary {
@@ -1220,7 +1259,7 @@ body {
 .acc-summary-divider {
     width: 1px;
     height: 40px;
-    background: #f2f3f5;
+    background: #e4e7ea;
 }
 
 .item-income .value {
@@ -1281,6 +1320,7 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
+    align-items: start;
 }
 
 .category-group {
@@ -1289,12 +1329,6 @@ body {
     border-radius: 1.5rem;
     border: 1px solid #e4e7ea;
     overflow: hidden;
-}
-
-
-
-.date-picker-btn:hover {
-    color: var(--primary);
 }
 
 .hidden-date-input {
@@ -1330,16 +1364,22 @@ body {
     position: relative;
     transition: background 0.2s;
     height: 100%;
-    /* 부모 그리드 칸을 꽉 채움 */
+    min-height: 90px;
+    /* 3개 항목 정도 표기 여유를 위한 높이 확보 */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     border: 1px solid #f1f4f9;
     min-width: 0;
-    /* 내용이 길어도 칸이 늘어나지 않도록 방지 */
-    overflow: hidden;
-    /* 영역 밖으로 나가는 내용 숨김 */
+    overflow-x: visible;
+    overflow-y: clip;
 }
+
+#account-calendar .calendar-day {
+    min-height: 115px;
+    /* 가계부는 내역(수입/지출/저축) 표기를 위해 더 여유있게 확보 */
+}
+
 
 .day-content {
     width: 100%;
@@ -1347,12 +1387,12 @@ body {
     flex-direction: column;
     gap: 2px;
     margin-top: 4px;
-    overflow: hidden;
-    /* 너무 많은 항목이 있을 경우 칸을 뚫고 나가지 않도록 함 */
+    overflow: visible;
 }
 
 .day-label {
     font-size: 0.65rem;
+    font-weight: 700;
     padding: 1px 4px;
     border-radius: 3px;
     white-space: nowrap;
@@ -1391,6 +1431,37 @@ body {
     /* 흐린 회색 텍스트 */
     text-decoration: line-through;
     /* 달력에서도 취소선 추가 */
+}
+
+/* 연속된 일정(다중일) 스타일 */
+.continuous-issue {
+    margin-left: -0.5rem;
+    margin-right: calc(-0.5rem - 1px);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    border-radius: 0;
+    width: calc(100% + 1rem + 2px);
+    position: relative;
+    z-index: 2;
+    box-shadow: 1px 0 0 #fff9db;
+    /* 테두리 경계선 덮어쓰기용 그림자 */
+}
+
+.continuous-issue.is-start {
+    margin-left: 0;
+    padding-left: 4px;
+    border-top-left-radius: 3px;
+    border-bottom-left-radius: 3px;
+    width: calc(100% + 0.5rem + 1px);
+}
+
+.continuous-issue.is-end {
+    margin-right: 0;
+    padding-right: 4px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    width: calc(100% + 0.5rem);
+    box-shadow: none;
 }
 
 .label-life {
@@ -1646,12 +1717,14 @@ body {
     background: #fee2e2;
     color: var(--danger);
     border: none;
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     transition: background 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .delete-stock-btn:hover {
@@ -1662,12 +1735,14 @@ body {
     background: #eef2ff;
     color: var(--primary);
     border: none;
-    padding: 0.4rem 0.8rem;
+    padding: 0.4rem 0.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     transition: background 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .edit-stock-btn:hover {
@@ -1680,11 +1755,12 @@ body {
     background: #eef2ff;
     color: var(--primary);
     border: none;
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 .todo-actions .delete-stock-btn,
@@ -1692,11 +1768,12 @@ body {
     background: #fee2e2;
     color: var(--danger);
     border: none;
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
+    white-space: nowrap;
 }
 
 @media (max-width: 600px) {
@@ -2501,7 +2578,7 @@ body.modal-open {
 .detail-list-wrapper {
     max-height: 400px;
     overflow-y: auto;
-    border: 1px solid #f1f5f9;
+    border: 1px solid #e4e7ea;
     border-radius: 0.75rem;
 }
 

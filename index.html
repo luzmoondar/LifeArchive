@@ -23,7 +23,26 @@
     <div class="app-container">
         <!-- New Header Area -->
         <div class="app-title-bar">
-            <h1>LifeArchive</h1>
+            <h1>
+                <svg id="_레이어_1" data-name="레이어_1" xmlns="http://www.w3.org/2000/svg" version="1.1"
+                    viewBox="0 0 283.5 283.5">
+                    <defs>
+                        <style>
+                            .st0 {
+                                fill: #fff;
+                            }
+
+                            .st1 {
+                                fill: #6366f1;
+                            }
+                        </style>
+                    </defs>
+                    <circle class="st0" cx="141.3" cy="141.5" r="127.5" />
+                    <path class="st1"
+                        d="M212.1,149.9l-22.8,11.2-29.8-29.8,11.2-22.8-17.4-17.4-38.4,86.5-31.1-31.1,62.4-62.4-15.8-15.8-77.3,77.3,52.6,52.6,8.3,8.3,8.3,8.3,107-47.5-17.4-17.4ZM131.8,189.2l-.4-.4,18.4-37.7,19.7,19.7-37.7,18.4Z" />
+                </svg>
+                LifeArchive
+            </h1>
             <div class="title-bar-actions">
                 <div id="sync-status-indicator" class="sync-status offline"><span></span> 대기 중</div>
                 <button onclick="manualSync()" class="sync-manual-btn">동기화</button>
@@ -76,6 +95,14 @@
                                     <div class="chart-wrapper">
                                         <canvas id="savings-chart"></canvas>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- 연간/월별 소비 추이 차트 추가 -->
+                            <div class="chart-box" style="width: 100%; margin-top: 1.5rem;">
+                                <h4>올해 월별 소비 추이</h4>
+                                <div class="chart-wrapper" style="height: 250px;">
+                                    <canvas id="monthly-trend-chart"></canvas>
                                 </div>
                             </div>
 
@@ -178,8 +205,14 @@
                                     <h4>이번달 이슈</h4>
                                 </div>
                                 <div class="todo-input">
-                                    <input type="number" id="new-issue-day" placeholder="일" min="1" max="31">
-                                    <input type="text" id="new-issue" placeholder="이슈 입력...">
+                                    <div style="display:flex; align-items:center; gap:4px; flex:none;">
+                                        <input type="number" id="new-issue-day" placeholder="시작" min="1" max="31"
+                                            style="width: 50px;">
+                                        <span style="color:var(--text-light); font-weight:bold;">~</span>
+                                        <input type="number" id="new-issue-end-day" placeholder="종료" min="1" max="31"
+                                            style="width: 50px;">
+                                    </div>
+                                    <input type="text" id="new-issue" placeholder="일정 입력...">
                                     <button id="add-issue">추가</button>
                                 </div>
                                 <ul id="issue-list" class="todo-list"></ul>
@@ -382,9 +415,25 @@
                 <button class="close-modal" id="close-cat-detail">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- Quick Entry Section (For Savings/Income) -->
+                <div id="detail-quick-entry-section" class="section-card mb-4"
+                    style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.2rem;">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <input type="date" id="quick-add-date" style="flex: 1;">
+                            <input type="text" id="quick-add-name" placeholder="내용 (예: 정기적금 납입)" style="flex: 2;">
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="quick-add-amount" placeholder="금액" style="flex: 1;">
+                            <button id="btn-quick-add-save" class="primary-btn"
+                                style="flex: none; width: 100px;">기록</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Budget Setting Section -->
-                <div class="detail-budget-section mb-4">
-                    <label style="display: block; margin-bottom: 8px;">월간 예산 설정</label>
+                <div id="detail-budget-section" class="detail-budget-section mb-4">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">월간 예산 설정</label>
                     <div style="display: flex; gap: 10px;">
                         <input type="number" id="cat-budget-input" placeholder="예산을 입력하세요">
                         <button id="save-cat-budget" class="secondary-btn" style="white-space:nowrap;">저장</button>
@@ -410,7 +459,8 @@
                                 <th style="width: 30px;"><input type="checkbox" id="check-all-trans"></th>
                                 <th style="width: 80px;">날짜</th>
                                 <th>태그/내용</th>
-                                <th style="width: 120px; text-align: right;">금액</th>
+                                <th style="width: 100px; text-align: right;">금액</th>
+                                <th style="width: 110px; text-align: center;">관리</th>
                             </tr>
                         </thead>
                         <tbody id="cat-trans-list">
@@ -522,7 +572,8 @@
                             <tr>
                                 <th style="width: 100px;">구분</th>
                                 <th>상품명</th>
-                                <th style="text-align: right; width: 140px;">현재 보유액</th>
+                                <th style="text-align: right; width: 120px;">보유액</th>
+                                <th style="text-align: center; width: 80px;">관리</th>
                             </tr>
                         </thead>
                         <tbody id="total-asset-detail-body">
