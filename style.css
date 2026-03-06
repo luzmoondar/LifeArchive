@@ -2406,9 +2406,14 @@ body {
     transition: transform 0.2s, border-color 0.2s;
 }
 
+.clickable-card {
+    cursor: pointer;
+}
+
 .savings-item-card:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
 .savings-card-header {

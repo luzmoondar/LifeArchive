@@ -228,7 +228,7 @@
                             <input type="number" id="life-day" placeholder="일" min="1" max="31">
                             <input type="text" id="life-item" placeholder="내용">
                             <input type="number" id="life-qty" placeholder="수량">
-                            <input type="number" id="life-amount" placeholder="금액">
+                            <input type="text" id="life-amount" placeholder="금액">
                             <button id="add-life-log">기록</button>
                         </div>
                     </div>
@@ -265,10 +265,12 @@
                                 <span style="font-weight: 700; color: #1e293b; margin-right: 0.5rem;">💍 결혼식 정산
                                     요약</span>
                                 <div style="width: 1px; height: 16px; background: #e2e8f0;"></div>
-                                <span>비용 지출 합계: <strong id="wedding-expense-total-top"
-                                        style="color: var(--danger);">0원</strong></span>
-                                <span>축의 받은금액 합계: <strong id="wedding-received-total"
-                                        style="color: var(--primary);">0원</strong></span>
+                                <div style="display: flex; gap: 1rem; align-items: baseline;">
+                                    <span>비용 지출 합계: <strong id="wedding-expense-total-top"
+                                            style="color: var(--danger); min-width: 80px; display: inline-block; text-align: right; white-space: nowrap; font-size: 0.9rem;">0원</strong></span>
+                                    <span>축의 받은금액 합계: <strong id="wedding-received-total"
+                                            style="color: var(--primary); min-width: 80px; display: inline-block; text-align: right; white-space: nowrap; font-size: 0.9rem;">0원</strong></span>
+                                </div>
                             </div>
                         </div>
 
@@ -278,7 +280,7 @@
                                 <div class="section-header">
                                     <h4 style="margin:0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">결혼식 비용
                                         총정리</h4>
-                                    <button class="add-btn" onclick="addWeddingCostGroup()" title="비용 그룹 추가">+</button>
+                                    <button id="btn-add-wedding-cost-group" class="add-btn" title="비용 그룹 추가">+</button>
                                 </div>
                                 <div id="wedding-costs-wrapper">
                                     <!-- JS will inject groups here as sub-sections -->
@@ -297,10 +299,10 @@
                                         <thead>
                                             <tr>
                                                 <th style="width: 40px;">NO</th>
-                                                <th>이름</th>
-                                                <th style="width: 120px;">받은금액</th>
-                                                <th style="width: 120px;">낸금액</th>
-                                                <th style="width: 80px;">참석</th>
+                                                <th style="width: auto;">이름</th>
+                                                <th style="width: 100px;">받은금액</th>
+                                                <th style="width: 100px;">낸금액</th>
+                                                <th style="width: 65px;">참석</th>
                                                 <th style="width: 45px;"></th>
                                             </tr>
                                         </thead>
@@ -308,12 +310,13 @@
                                         <tfoot style="background: #fdfdfd;">
                                             <tr>
                                                 <td colspan="2" class="total-label"
-                                                    style="background:transparent; border:none;">합계</td>
+                                                    style="background:transparent; border:none; text-align: right; padding-right: 0.8rem; font-size: 0.8rem;">
+                                                    합계</td>
                                                 <td class="total-amount" id="wedding-gifts-received-footer"
-                                                    style="background:transparent; border:none; text-align:left; padding-left:0.6rem;">
+                                                    style="background:transparent; border:none; text-align:right; padding-right:0.4rem; white-space: nowrap; font-size: 0.8rem;">
                                                     0원</td>
                                                 <td class="total-amount" id="wedding-gifts-paid-footer"
-                                                    style="background:transparent; border:none; text-align:left; padding-left:0.6rem;">
+                                                    style="background:transparent; border:none; text-align:right; padding-right:0.4rem; white-space: nowrap; font-size: 0.8rem;">
                                                     0원</td>
                                                 <td colspan="2" style="background:transparent; border:none;"></td>
                                             </tr>
@@ -322,7 +325,7 @@
                                 </div>
                                 <div
                                     style="padding: 0.5rem 0 1rem 0; border-bottom: 1px dashed #eef2f6; margin-bottom: 1.5rem;">
-                                    <button class="add-row-mini-btn" onclick="addWeddingGiftRow()"
+                                    <button id="btn-add-wedding-gift-row" class="add-row-mini-btn"
                                         style="width: 100%; font-size: 0.85rem; background:none; border:none; color:var(--primary); font-weight:700; cursor:pointer;">+
                                         축의금 내역 추가</button>
                                 </div>
@@ -373,7 +376,7 @@
                 </div>
                 <div class="form-group">
                     <label>금액</label>
-                    <input type="number" id="modal-amount" placeholder="금액을 입력하세요">
+                    <input type="text" id="modal-amount" placeholder="금액을 입력하세요">
                 </div>
             </div>
             <div class="modal-footer">
@@ -424,7 +427,7 @@
                             <input type="text" id="quick-add-name" placeholder="내용 (예: 정기적금 납입)" style="flex: 2;">
                         </div>
                         <div style="display: flex; gap: 10px;">
-                            <input type="number" id="quick-add-amount" placeholder="금액" style="flex: 1;">
+                            <input type="text" id="quick-add-amount" placeholder="금액" style="flex: 1;">
                             <button id="btn-quick-add-save" class="primary-btn"
                                 style="flex: none; width: 100px;">기록</button>
                         </div>
@@ -435,7 +438,7 @@
                 <div id="detail-budget-section" class="detail-budget-section mb-4">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600;">월간 예산 설정</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="number" id="cat-budget-input" placeholder="예산을 입력하세요">
+                        <input type="text" id="cat-budget-input" placeholder="예산을 입력하세요">
                         <button id="save-cat-budget" class="secondary-btn" style="white-space:nowrap;">저장</button>
                     </div>
                 </div>
@@ -533,11 +536,11 @@
                 </div>
                 <div class="form-group" id="savings-target-group">
                     <label id="savings-target-label">목표 금액</label>
-                    <input type="number" id="savings-target-amount" placeholder="0">
+                    <input type="text" id="savings-target-amount" placeholder="0">
                 </div>
                 <div class="form-group" id="savings-monthly-group">
                     <label>월 납입액</label>
-                    <input type="number" id="savings-monthly-amount" placeholder="0">
+                    <input type="text" id="savings-monthly-amount" placeholder="0">
                 </div>
                 <div class="form-group" id="savings-interest-group">
                     <label>이자율 (%)</label>

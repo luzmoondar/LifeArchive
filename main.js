@@ -113,9 +113,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const parsed = JSON.parse(localData);
         state = { ...state, ...parsed };
 
-        // Wedding 데이터 이관 지원
-        state.weddingGifts = parsed.weddingGifts || parsed.weddingData || [];
-        state.savingsItems = parsed.savingsItems || [];
+        // Wedding 데이터 이관 지원 및 보호
+        state.weddingGifts = Array.isArray(parsed.weddingGifts) ? parsed.weddingGifts : (Array.isArray(parsed.weddingData) ? parsed.weddingData : []);
+        state.weddingCosts = Array.isArray(parsed.weddingCosts) ? parsed.weddingCosts : state.weddingCosts;
+        state.savingsItems = Array.isArray(parsed.savingsItems) ? parsed.savingsItems : [];
         state.categoryBudgets = parsed.categoryBudgets || {};
         state.monthlyMemos = parsed.monthlyMemos || {};
 
@@ -155,9 +156,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 state = {
                     ...state,
-                    ...cloudExpense,
-                    savingsItems: cloudExpense.savingsItems || state.savingsItems || []
+                    ...cloudExpense
                 };
+
+                // 데이터 정합성 강제 (배열이 아닐 경우 초기화)
+                if (!Array.isArray(state.weddingGifts)) state.weddingGifts = [];
+                if (!Array.isArray(state.weddingCosts)) state.weddingCosts = [];
+                if (!Array.isArray(state.savingsItems)) state.savingsItems = [];
 
                 // 클라우드 데이터를 불러오더라도 "현재 보고 있는 날짜"는 오늘로 유지
                 resetViewDatesToToday();
@@ -246,11 +251,85 @@ document.addEventListener('DOMContentLoaded', async () => {
             .replace(/'/g, '&#039;');
     }
 
-    window.addWeddingGiftRow = () => {
-        state.weddingGifts.push({ id: crypto.randomUUID(), name: '', received: 0, isPartner: false, hasMeal: false });
-        saveState();
-        renderWeddingGifts();
-    };
+    // --- 금액 포맷팅 (천 단위 콤마) 헬퍼 ---
+    function formatAmount(val) {
+        if (val === undefined || val === null || val === '') return '';
+        const num = String(val).replace(/[^0-9]/g, '');
+        if (!num) return '';
+        return Number(num).toLocaleString();
+    }
+
+    function parseAmount(val) {
+        if (!val) return 0;
+        return parseInt(String(val).replace(/[^0-9]/g, '')) || 0;
+    }
+
+    // 입력창에 실시간 콤마 적용
+    function setAmountInput(inputEl) {
+        if (!inputEl) return;
+        inputEl.addEventListener('input', (e) => {
+            const rawValue = e.target.value;
+            const numericValue = parseAmount(rawValue);
+            e.target.value = formatAmount(numericValue);
+        });
+    }
+
+    // --- 디바운스된 저장을 위한 변수 ---
+    let saveTimeout = null;
+    function debouncedSaveState() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveState();
+        }, 500); // 0.5초 후 저장
+    }
+
+    const btnAddWeddingGiftRow = document.getElementById('btn-add-wedding-gift-row');
+    if (btnAddWeddingGiftRow) {
+        btnAddWeddingGiftRow.onclick = () => {
+            if (!Array.isArray(state.weddingGifts)) state.weddingGifts = [];
+            const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+            state.weddingGifts.push({ id: newId, name: '', received: 0, paid: 0, attended: false });
+            saveState();
+            renderWeddingGifts();
+
+            // 새로 추가된 행으로 스크롤 및 포커스
+            setTimeout(() => {
+                const rows = document.querySelectorAll('#wedding-gift-table-body tr');
+                if (rows.length > 0) {
+                    const lastRow = rows[rows.length - 1];
+                    lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    const firstInput = lastRow.querySelector('input');
+                    if (firstInput) firstInput.focus();
+                }
+            }, 100);
+        };
+    }
+
+    const btnAddWeddingCostGroup = document.getElementById('btn-add-wedding-cost-group');
+    if (btnAddWeddingCostGroup) {
+        btnAddWeddingCostGroup.onclick = () => {
+            if (!Array.isArray(state.weddingCosts)) state.weddingCosts = [];
+            const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+            state.weddingCosts.push({ id: newId, title: '새 카테고리', items: [] });
+            saveState();
+            renderWeddingCosts();
+
+            // 새로 추가된 그룹으로 스크롤
+            setTimeout(() => {
+                const groups = document.querySelectorAll('.wedding-cost-subsection');
+                if (groups.length > 0) {
+                    const lastGroup = groups[groups.length - 1];
+                    lastGroup.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const titleInput = lastGroup.querySelector('.group-title-edit');
+                    if (titleInput) {
+                        titleInput.focus();
+                        titleInput.select();
+                    }
+                }
+            }, 100);
+        };
+    }
+    window.addWeddingGiftRow = () => btnAddWeddingGiftRow?.onclick?.();
 
     // Tab Navigation
     const tabs = document.querySelectorAll('.tab-btn');
@@ -338,6 +417,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         updateCharts(monthlyExpense, monthlySavings);
+        renderSavingsItems(); // 자산 현황 카드 동시 업데이트
     }
 
     function updateCharts(totalExpense, totalSavings) {
@@ -870,14 +950,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCategoryGrids(); // 닫을 때 카드 선 복원
     };
 
-    function openCategoryDetailModal(cat, type) {
-        currentModalTarget = { category: cat, type };
+    function openCategoryDetailModal(cat, type, showAll = false) {
+        currentModalTarget = { category: cat, type, showAll };
         const modal = document.getElementById('category-detail-modal');
-        document.getElementById('cat-detail-title').textContent = (cat === '수입') ? '이번 달 모든 수입' : (cat === '자산') ? '이번 달 모든 자산' : `'${cat}' 상세 내역`;
+
+        let titleText = '';
+        if (cat === '수입') titleText = '이번 달 모든 수입';
+        else if (cat === '자산') titleText = '이번 달 모든 자산';
+        else titleText = showAll ? `'${cat}' 전체 내역` : `'${cat}' 상세 내역`;
+
+        document.getElementById('cat-detail-title').textContent = titleText;
 
         // 저축/수입 타입이면 빠른 추가창 표시, 예산창 숨김
         const quickEntrySection = document.getElementById('detail-quick-entry-section');
         const budgetSection = document.getElementById('detail-budget-section');
+        const btnAddDetailEntry = document.getElementById('btn-add-detail-entry');
 
         if (type === 'savings' || type === 'income') {
             if (quickEntrySection) quickEntrySection.style.display = 'block';
@@ -890,6 +977,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             if (quickEntrySection) quickEntrySection.style.display = 'none';
             if (budgetSection) budgetSection.style.display = 'block';
+        }
+
+        // 저축 카테고리일 경우 하단 '내역 추가하기' 버튼 숨김 (이미 상단에 빠른 추가창이 있음)
+        if (btnAddDetailEntry) {
+            btnAddDetailEntry.style.display = (type === 'savings') ? 'none' : 'block';
         }
 
         document.getElementById('cat-budget-input').value = state.categoryBudgets[cat] || '';
@@ -918,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnQuickAddSave.onclick = () => {
             const date = document.getElementById('quick-add-date').value;
             const name = document.getElementById('quick-add-name').value.trim();
-            const amount = parseInt(document.getElementById('quick-add-amount').value) || 0;
+            const amount = parseAmount(document.getElementById('quick-add-amount').value);
 
             if (!date || !name || amount <= 0) {
                 alert('날짜, 내용, 금액을 모두 입력해주세요.');
@@ -947,6 +1039,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('quick-add-amount').value = '';
         };
     }
+    setAmountInput(document.getElementById('quick-add-amount'));
 
     function renderCategoryDetail(cat, type) {
         const tbody = document.getElementById('cat-trans-list');
@@ -961,7 +1054,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const trans = (state.transactions || [])
             .filter(t => {
                 const isMatchCat = (cat === '수입' || cat === '자산') ? true : (t.cat === cat);
-                return isMatchCat && t.type === typeToUse && t.date >= range.start && t.date <= range.end;
+                const isDateInRange = currentModalTarget.showAll ? true : (t.date >= range.start && t.date <= range.end);
+                return isMatchCat && t.type === typeToUse && isDateInRange;
             })
             .sort((a, b) => {
                 if (detailSortOrder === 'newest') return b.date.localeCompare(a.date);
@@ -1065,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveBtn.onclick = () => {
         const d = document.getElementById('modal-date').value,
             n = document.getElementById('modal-name').value,
-            a = parseInt(document.getElementById('modal-amount').value) || 0;
+            a = parseAmount(document.getElementById('modal-amount').value);
 
         const activeChip = document.querySelector('.tag-chip.active');
         const t = activeChip ? activeChip.dataset.value : '기타';
@@ -1074,7 +1168,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (currentModalTarget.type === 'wedding') {
                 const group = state.weddingCosts.find(g => g.id === currentModalTarget.category);
                 if (group) {
-                    group.items.push({ id: crypto.randomUUID(), detail: n, amount: a, memo: '' });
+                    const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                    group.items.push({ id: newId, detail: n, amount: a, memo: '' });
                 }
             } else {
                 state.transactions.push({
@@ -1102,6 +1197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('modal-amount').value = '';
         }
     };
+    setAmountInput(document.getElementById('modal-amount'));
 
     document.getElementById('btn-rename-cat').onclick = () => {
         const oldId = currentModalTarget.category;
@@ -1513,16 +1609,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (day && i && q) {
             const date = `${state.viewDates.life}-${String(day).padStart(2, '0')}`;
-            state.logs.push({ id: Date.now(), date: date, item: i, qty: q, amount: a || 0, inStock: true });
+            state.logs.push({ id: Date.now(), date: date, item: i, qty: q, amount: parseAmount(a) || 0, inStock: true });
             document.getElementById('life-day').value = '';
             document.getElementById('life-item').value = '';
             document.getElementById('life-qty').value = '';
             document.getElementById('life-amount').value = '';
             saveState(); refreshCalendars(); renderStockList(); alert('기록되었습니다!');
-        } else if (!day) {
-            alert('날짜(일)를 입력해주세요.');
         }
     };
+    setAmountInput(document.getElementById('life-amount'));
 
     // --- Auth Logic ---
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -1618,13 +1713,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- Category Detail Modal Event Listeners ---
     document.getElementById('save-cat-budget').onclick = () => {
         const cat = currentModalTarget.category;
-        const b = parseInt(document.getElementById('cat-budget-input').value) || 0;
+        const b = parseAmount(document.getElementById('cat-budget-input').value);
         state.categoryBudgets[cat] = b;
         saveState();
         renderCategoryGrids();
         updateStats();
         alert('예산이 저장되었습니다.');
     };
+    setAmountInput(document.getElementById('cat-budget-input'));
 
     if (document.getElementById('cat-search-input')) {
         document.getElementById('cat-search-input').oninput = () => {
@@ -1691,7 +1787,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Ensure some empty items
             if (group.items.length === 0) {
-                for (let i = 0; i < 5; i++) group.items.push({ id: crypto.randomUUID(), detail: '', amount: 0, memo: '' });
+                for (let i = 0; i < 5; i++) {
+                    const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                    group.items.push({ id: newId, detail: '', amount: 0, memo: '' });
+                }
             }
 
             const headerHtml = `
@@ -1707,17 +1806,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <table class="detail-table wedding-expense-table" style="border:none; border-radius:0; box-shadow:none;">
                         <thead>
                             <tr>
-                                <th>내용</th>
+                                <th style="width: 110px;">내용</th>
                                 <th style="width: 100px;">금액</th>
-                                <th style="width: 130px;">비고</th>
+                                <th>비고</th>
                                 <th style="width: 35px;"></th>
                             </tr>
                         </thead>
                         <tbody class="group-body"></tbody>
                         <tfoot style="background: #fdfdfd; border-top: 1px solid #eef2f6;">
                             <tr>
-                                <td class="total-label" style="background:#f8fafc; border:none;">합계</td>
-                                <td class="total-amount group-total" style="text-align:left; padding-left:0.6rem; background:#f8fafc; border:none;">0원</td>
+                                <td class="total-label" style="background:#f8fafc; border:none; font-size: 0.8rem; text-align: right; padding-right: 1rem;">합계</td>
+                                <td class="total-amount group-total" style="text-align:right; padding-right:0.6rem; background:#f8fafc; border:none; white-space: nowrap; font-size: 0.8rem;">0원</td>
                                 <td colspan="2" style="background:#f8fafc; border:none;"></td>
                             </tr>
                         </tfoot>
@@ -1735,10 +1834,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const addRowBtn = subsection.querySelector('.add-expense-row-btn');
             const deleteGroupBtn = subsection.querySelector('.delete-group-btn');
 
-            titleInput.oninput = (e) => { group.title = e.target.value; saveToLocal(); };
+            titleInput.oninput = (e) => { group.title = e.target.value; debouncedSaveState(); };
 
             addRowBtn.onclick = () => {
-                group.items.push({ id: crypto.randomUUID(), detail: '', amount: 0, memo: '' });
+                const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+                group.items.push({ id: newId, detail: '', amount: 0, memo: '' });
                 saveState();
                 renderWeddingCosts();
             };
@@ -1756,19 +1856,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><input type="text" class="item-detail" value="${safeHTML(item.detail) || ''}" placeholder="내용 입력"></td>
-                    <td><input type="number" class="item-amount" value="${item.amount || ''}" placeholder="금액"></td>
+                    <td><input type="text" class="item-amount" value="${formatAmount(item.amount)}" placeholder="금액" style="text-align: right;"></td>
                     <td><input type="text" class="item-memo" value="${safeHTML(item.memo) || ''}" placeholder="비고"></td>
                     <td class="row-action-cell"><button class="remove-row-btn">✕</button></td>
                 `;
 
-                tr.querySelector('.item-detail').oninput = (e) => { item.detail = e.target.value; saveToLocal(); };
-                tr.querySelector('.item-amount').oninput = (e) => {
-                    item.amount = parseInt(e.target.value) || 0;
-                    saveToLocal();
+                tr.querySelector('.item-detail').oninput = (e) => { item.detail = e.target.value; debouncedSaveState(); };
+                const amountInput = tr.querySelector('.item-amount');
+                setAmountInput(amountInput);
+                amountInput.addEventListener('input', (e) => {
+                    item.amount = parseAmount(e.target.value);
+                    debouncedSaveState();
                     updateWeddingSummary();
                     calculateGroupTotal(group, groupTotalEl);
-                };
-                tr.querySelector('.item-memo').oninput = (e) => { item.memo = e.target.value; saveToLocal(); };
+                });
+                tr.querySelector('.item-memo').oninput = (e) => { item.memo = e.target.value; debouncedSaveState(); };
                 tr.querySelector('.remove-row-btn').onclick = () => {
                     group.items.splice(idx, 1);
                     saveState();
@@ -1788,19 +1890,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (el) el.textContent = `${total.toLocaleString()}원`;
     }
 
-    window.addWeddingCostGroup = () => {
-        state.weddingCosts.push({ id: crypto.randomUUID(), title: '새 카테고리', items: [] });
-        saveState();
-        renderWeddingCosts();
-    };
+
 
     function renderWeddingGifts() {
         const body = document.getElementById('wedding-gift-table-body');
         if (!body) return;
         body.innerHTML = '';
 
-        while (state.weddingGifts.length < 20) {
-            state.weddingGifts.push({ id: crypto.randomUUID(), name: '', received: 0, paid: 0, attended: false });
+        // 기본적으로 최소 10개의 빈 행을 유지 (기존 20개에서 조정하여 가시성 개선)
+        while (state.weddingGifts.length < 10) {
+            const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substring(2);
+            state.weddingGifts.push({ id: newId, name: '', received: 0, paid: 0, attended: false });
         }
 
         state.weddingGifts.forEach((item, idx) => {
@@ -1808,8 +1908,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             tr.innerHTML = `
                 <td style="text-align:center; font-size:0.8rem; color:#64748b;">${idx + 1}</td>
                 <td><input type="text" class="gift-name" value="${safeHTML(item.name) || ''}" placeholder="이름"></td>
-                <td><input type="number" class="gift-received" value="${item.received || ''}" placeholder="0"></td>
-                <td><input type="number" class="gift-paid" value="${item.paid || ''}" placeholder="0"></td>
+                <td><input type="text" class="gift-received" value="${formatAmount(item.received)}" placeholder="0" style="text-align: right;"></td>
+                <td><input type="text" class="gift-paid" value="${formatAmount(item.paid)}" placeholder="0" style="text-align: right;"></td>
                 <td>
                     <div class="wedding-attended-cell">
                         <input type="checkbox" class="is-attended" ${item.attended ? 'checked' : ''}>
@@ -1818,18 +1918,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td class="row-action-cell"><button class="remove-row-btn">✕</button></td>
             `;
 
-            tr.querySelector('.gift-name').oninput = (e) => { item.name = e.target.value; saveToLocal(); };
-            tr.querySelector('.gift-received').oninput = (e) => {
-                item.received = parseInt(e.target.value) || 0;
-                saveToLocal();
+            tr.querySelector('.gift-name').oninput = (e) => { item.name = e.target.value; debouncedSaveState(); };
+
+            const recInput = tr.querySelector('.gift-received');
+            setAmountInput(recInput);
+            recInput.addEventListener('input', (e) => {
+                item.received = parseAmount(e.target.value);
+                debouncedSaveState();
                 updateWeddingSummary();
-            };
-            tr.querySelector('.gift-paid').oninput = (e) => {
-                item.paid = parseInt(e.target.value) || 0;
-                saveToLocal();
+            });
+
+            const paidInput = tr.querySelector('.gift-paid');
+            setAmountInput(paidInput);
+            paidInput.addEventListener('input', (e) => {
+                item.paid = parseAmount(e.target.value);
+                debouncedSaveState();
                 updateWeddingSummary();
-            };
-            tr.querySelector('.is-attended').onchange = (e) => { item.attended = e.target.checked; saveToLocal(); };
+            });
+            tr.querySelector('.is-attended').onchange = (e) => { item.attended = e.target.checked; debouncedSaveState(); };
             tr.querySelector('.remove-row-btn').onclick = () => {
                 state.weddingGifts.splice(idx, 1);
                 saveState();
@@ -1954,7 +2060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveSavingsBtn.onclick = async () => {
             const type = document.getElementById('savings-type').value;
             const name = document.getElementById('savings-name').value.trim();
-            const monthlyAmount = parseInt(document.getElementById('savings-monthly-amount').value) || 0;
+            const monthlyAmount = parseAmount(document.getElementById('savings-monthly-amount').value);
             const interestRate = parseFloat(document.getElementById('savings-interest').value) || 0;
             const startDate = document.getElementById('savings-start-date').value;
             const endDate = document.getElementById('savings-end-date').value;
@@ -1968,7 +2074,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     targetAmount = monthlyAmount * Math.max(0, months);
                 }
             } else {
-                targetAmount = parseInt(document.getElementById('savings-target-amount').value) || 0;
+                targetAmount = parseAmount(document.getElementById('savings-target-amount').value);
             }
 
             if (!name || !startDate || !endDate) return alert('모든 항목을 입력해주세요.');
@@ -2005,6 +2111,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await saveState();
             renderSavingsItems();
         };
+        setAmountInput(document.getElementById('savings-target-amount'));
+        setAmountInput(document.getElementById('savings-monthly-amount'));
     }
 
     window.editSavingsItem = (id) => {
@@ -2048,6 +2156,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (deleteBtn) {
                     const id = deleteBtn.dataset.id;
                     window.deleteSavingsItem(id);
+                } else {
+                    const card = e.target.closest('.savings-item-card');
+                    if (card && card.dataset.cat) {
+                        openCategoryDetailModal(card.dataset.cat, 'savings', true);
+                    }
                 }
             });
             listEl.dataset.listener = 'true';
@@ -2097,7 +2210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const monthlyInfo = (typeLabel === '적금' && item.monthlyAmount) ? `월 ${item.monthlyAmount.toLocaleString()}원 납입` : '';
 
                 return `
-                    <div class="savings-item-card">
+                    <div class="savings-item-card clickable-card" data-cat="${cat}">
                         <div class="savings-card-header">
                             <div class="savings-card-title">
                                 <h5><span style="color: var(--primary); font-size: 0.85em;">[${typeLabel}]</span> ${safeHTML(cat)}</h5>
@@ -2128,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 // 상세 정보가 없는 경우 (심플 카드)
                 return `
-                    <div class="savings-item-card" style="border-left: 4px solid #cbd5e1; background: #fdfdfd;">
+                    <div class="savings-item-card clickable-card" data-cat="${cat}" style="border-left: 4px solid #cbd5e1; background: #fdfdfd;">
                         <div class="savings-card-header">
                             <div class="savings-card-title">
                                 <h5><span style="color: #64748b; font-size: 0.85em;">[미지정]</span> ${safeHTML(cat)}</h5>
