@@ -362,16 +362,14 @@
                 <div class="form-group" id="modal-tag-group">
                     <label>태그</label>
                     <div id="modal-tag-chips" class="tag-chips">
-                        <div class="tag-chip" data-value="생필품">생필품</div>
-                        <div class="tag-chip active" data-value="쇼핑">쇼핑</div>
-                        <div class="tag-chip" data-value="외식">외식</div>
-                        <div class="tag-chip" data-value="장보기">장보기</div>
-                        <div class="tag-chip" data-value="주거">주거</div>
-                        <div class="tag-chip" data-value="여행">여행</div>
-                        <div class="tag-chip" data-value="건강">건강</div>
-                        <div class="tag-chip" data-value="문화">문화</div>
-                        <div class="tag-chip" data-value="통신/구독">통신/구독</div>
-                        <div class="tag-chip" data-value="기타">기타</div>
+                        <div class="tag-chip" data-value="주거비">주거비</div>
+                        <div class="tag-chip" data-value="생활비">생활비</div>
+                        <div class="tag-chip" data-value="식비">식비</div>
+                        <div class="tag-chip" data-value="쇼핑">쇼핑</div>
+                        <div class="tag-chip" data-value="여행&문화">여행&문화</div>
+                        <div class="tag-chip" data-value="교통&차량">교통&차량</div>
+                        <div class="tag-chip" data-value="통신&구독">통신&구독</div>
+                        <div class="tag-chip active" data-value="기타">기타</div>
                     </div>
                 </div>
                 <div class="form-group">
@@ -436,10 +434,18 @@
 
                 <!-- Budget Setting Section -->
                 <div id="detail-budget-section" class="detail-budget-section mb-4">
-                    <label style="display: block; margin-bottom: 8px; font-weight: 600;">월간 예산 설정</label>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <label style="font-weight: 600; margin: 0;">통장 분배금 설정</label>
+                        <div id="cat-balance-display"
+                            style="font-weight: 700; font-size: 1.1rem; color: var(--primary);">잔액 : 0원</div>
+                    </div>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="cat-budget-input" placeholder="예산을 입력하세요">
-                        <button id="save-cat-budget" class="secondary-btn" style="white-space:nowrap;">저장</button>
+                        <input type="text" id="cat-budget-input" placeholder="분배금을 입력하세요" style="flex:1;">
+                        <button id="save-cat-budget" class="secondary-btn"
+                            style="white-space:nowrap; width: 80px;">저장</button>
+                        <button id="btn-settle-budget" class="primary-btn"
+                            style="white-space:nowrap; width: 80px; display: none;">정산</button>
                     </div>
                 </div>
 

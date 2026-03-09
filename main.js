@@ -400,7 +400,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('acc-monthly-expense').textContent = `${monthlyExpense.toLocaleString()}원`;
         document.getElementById('acc-monthly-savings').textContent = `${monthlySavings.toLocaleString()}원`;
 
-        const monthlyBalance = monthlyIncome - monthlyExpense - monthlySavings;
+        let totalDeduction = 0;
+        const cats = [...state.categories.expense, ...state.categories.savings];
+        cats.forEach(c => {
+            const b = state.categoryBudgets[c] || 0;
+            const a = rangeTrans.filter(t => t.cat === c).reduce((s, t) => s + t.amount, 0);
+            totalDeduction += Math.max(b, a);
+        });
+
+        const monthlyBalance = monthlyIncome - totalDeduction;
         const balanceEl = document.getElementById('acc-monthly-balance');
         const assetEl = document.getElementById('acc-total-asset');
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
@@ -808,12 +816,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const budget = state.categoryBudgets[cat] || 0;
                 let budgetHtml = '';
 
-                if (type === 'expense') {
-                    // 예산이 없어도 0원으로 표시
-                    budgetHtml = `<div class="budget-info">예산 : ${budget.toLocaleString()}원</div>`;
-                } else {
-                    // 저축 카테고리 기호 등 추가 가능 (필요시)
-                    budgetHtml = '';
+                if (type === 'expense' || type === 'savings') {
+                    // 분배금이 없어도 0원으로 표시
+                    const balance = budget - amount;
+                    const balanceColor = balance < 0 ? 'var(--danger)' : 'inherit';
+                    budgetHtml = `<div class="budget-info">분배금 : ${budget.toLocaleString()}원 &nbsp;|&nbsp; 잔액 : <span style="color: ${balanceColor};">${balance.toLocaleString()}원</span></div>`;
                 }
 
                 const card = document.createElement('div');
@@ -966,11 +973,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const budgetSection = document.getElementById('detail-budget-section');
         const btnAddDetailEntry = document.getElementById('btn-add-detail-entry');
 
-        if (type === 'savings' || type === 'income') {
+        if (type === 'income') {
             if (quickEntrySection) quickEntrySection.style.display = 'block';
             if (budgetSection) budgetSection.style.display = 'none';
 
             // 빠른 추가 필드 초기화
+            document.getElementById('quick-add-date').value = formatLocalDate(new Date());
+            document.getElementById('quick-add-name').value = '';
+            document.getElementById('quick-add-amount').value = '';
+        } else if (type === 'savings') {
+            if (quickEntrySection) quickEntrySection.style.display = 'block';
+            if (budgetSection) budgetSection.style.display = 'block';
+
             document.getElementById('quick-add-date').value = formatLocalDate(new Date());
             document.getElementById('quick-add-name').value = '';
             document.getElementById('quick-add-amount').value = '';
@@ -979,13 +993,47 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (budgetSection) budgetSection.style.display = 'block';
         }
 
+        const catBalanceDisplay = document.getElementById('cat-balance-display');
+        const btnSettleBudget = document.getElementById('btn-settle-budget');
+        const inputBudget = document.getElementById('cat-budget-input');
+
+        if (type === 'expense' || type === 'savings') {
+            const b = state.categoryBudgets[cat] || 0;
+            const currentMonth = state.viewDates.account;
+            const salaryDay = state.salaryDay || 1;
+            const range = getDateRangeForMonth(currentMonth, salaryDay);
+            const a = state.transactions.filter(t => t.cat === cat && t.type === type && t.date >= range.start && t.date <= range.end).reduce((s, t) => s + t.amount, 0);
+            const bal = b - a;
+
+            if (catBalanceDisplay) {
+                catBalanceDisplay.textContent = `잔액 : ${bal.toLocaleString()}원`;
+                catBalanceDisplay.style.color = bal < 0 ? 'var(--danger)' : 'var(--primary)';
+            }
+            if (inputBudget) {
+                inputBudget.value = b > 0 ? b.toLocaleString() : '';
+            }
+            if (btnSettleBudget) {
+                btnSettleBudget.style.display = bal > 0 ? 'inline-block' : 'none';
+                btnSettleBudget.onclick = () => {
+                    const confirmSettle = confirm(`현재 잔액 ${bal.toLocaleString()}원을 정산하시겠습니까?\n이 카테고리의 분배금이 실 사용 금액인 ${a.toLocaleString()}원으로 조정되고 남은 금액은 전체 잔액으로 반환됩니다.`);
+                    if (confirmSettle) {
+                        state.categoryBudgets[cat] = a;
+                        if (inputBudget) inputBudget.value = a.toLocaleString();
+                        saveState(); renderCategoryGrids(); updateStats();
+                        openCategoryDetailModal(cat, type, showAll);
+                    }
+                };
+            }
+        }
+
         // 저축 카테고리일 경우 하단 '내역 추가하기' 버튼 숨김 (이미 상단에 빠른 추가창이 있음)
         if (btnAddDetailEntry) {
             btnAddDetailEntry.style.display = (type === 'savings') ? 'none' : 'block';
         }
 
-        document.getElementById('cat-budget-input').value = state.categoryBudgets[cat] || '';
         if (document.getElementById('cat-search-input')) document.getElementById('cat-search-input').value = '';
+
+        setAmountInput(document.getElementById('cat-budget-input'));
 
         // 정렬 상태 초기화
         detailSortOrder = 'newest';
@@ -1136,9 +1184,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     document.getElementById('save-cat-budget').onclick = () => {
-        const val = parseInt(document.getElementById('cat-budget-input').value) || 0;
+        const val = parseInt(String(document.getElementById('cat-budget-input').value).replace(/[^0-9]/g, '')) || 0;
         state.categoryBudgets[currentModalTarget.category] = val;
-        saveState(); renderCategoryGrids();
+        saveState(); renderCategoryGrids(); updateStats();
+        openCategoryDetailModal(currentModalTarget.category, currentModalTarget.type);
     };
 
     document.getElementById('btn-delete-selected').onclick = () => {
