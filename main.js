@@ -61,7 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         issues: [],
         viewDates: {
             account: new Date().toISOString().slice(0, 7),
-            life: new Date().toISOString().slice(0, 7)
+            life: new Date().toISOString().slice(0, 7),
+            stats: new Date().getFullYear()
         },
         weddingCosts: [
             { id: 'group1', title: '', items: [] },
@@ -104,7 +105,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         state.viewDates = {
             account: accountMonth,
-            life: `${y}-${String(m).padStart(2, '0')}`
+            life: `${y}-${String(m).padStart(2, '0')}`,
+            stats: y
         };
     }
 
@@ -374,11 +376,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const currentMonthDetailExpense = 0;
 
-        // 전체 통계용 (All Time)
-        const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-        const totalBaseExpense = state.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        const totalExpense = totalBaseExpense; // 상세가계부 합계는 별도 (연동 안 함)
-        const totalSavings = state.transactions.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
+        const currentYear = state.viewDates.stats || new Date().getFullYear();
+        const yearTitleEl = document.getElementById('stats-year-title');
+        if (yearTitleEl) yearTitleEl.textContent = `${currentYear}년 통계표`;
+
+        // 해당 연도의 트랜잭션 필터링
+        const yearStart = `${currentYear}-01-01`;
+        const yearEnd = `${currentYear}-12-31`;
+        const yearTrans = state.transactions.filter(t => t.date >= yearStart && t.date <= yearEnd);
+
+        // 전체 통계용 (Selected Year)
+        const totalIncome = yearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const totalBaseExpense = yearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpense = totalBaseExpense;
+        const totalSavings = yearTrans.filter(t => t.type === 'savings').reduce((sum, t) => sum + t.amount, 0);
 
         document.getElementById('total-income').textContent = `${totalIncome.toLocaleString()}원`;
         document.getElementById('total-expense').textContent = `${totalExpense.toLocaleString()}원`;
@@ -396,7 +407,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let monthlySavings = 0;
 
         state.categories.expense.forEach(c => {
-            const b = state.categoryBudgets[c] || 0;
+            const b = (state.categoryBudgets[currentMonth] && state.categoryBudgets[currentMonth][c]) || 0;
             const a = rangeTrans.filter(t => t.cat === c && t.type === 'expense').reduce((s, t) => s + t.amount, 0);
             monthlyExpense += Math.max(b, a);
         });
@@ -434,15 +445,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             rangeInfoEl.textContent = `📊 집계기간 : ${range.start} ~ ${range.end}`;
         }
 
-        updateCharts(monthlyExpense, monthlySavings);
+        // 차트 업데이트 (연간 기준으로 표시하므로 연간 합계 전달)
+        updateCharts(totalExpense, totalSavings);
         renderSavingsItems(); // 자산 현황 카드 동시 업데이트
     }
 
-    function updateCharts(totalExpense, totalSavings) {
-        const currentMonth = state.viewDates.account;
-        const salaryDay = state.salaryDay || 1;
-        const range = getDateRangeForMonth(currentMonth, salaryDay);
-        const rangeTrans = state.transactions.filter(t => t.date >= range.start && t.date <= range.end);
+    function updateCharts(yearlyTotalExpense, yearlyTotalSavings) {
+        const currentYear = state.viewDates.stats;
+        const yearStart = `${currentYear}-01-01`;
+        const yearEnd = `${currentYear}-12-31`;
+        const yearTrans = state.transactions.filter(t => t.date >= yearStart && t.date <= yearEnd);
 
         const getCtx = (id) => {
             const el = document.getElementById(id);
@@ -456,15 +468,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         };
 
-        // 이번 달 기준 데이터 취합 (All-time이 아닌 현재 범위 기준)
+        // 선택된 연도 기준 데이터 취합
         const expenseData = state.categories.expense.map(cat => ({
             name: cat,
-            value: rangeTrans.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+            value: yearTrans.filter(t => t.type === 'expense' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
 
         const savingsData = state.categories.savings.map(cat => ({
             name: cat,
-            value: rangeTrans.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
+            value: yearTrans.filter(t => t.type === 'savings' && t.cat === cat).reduce((sum, t) => sum + t.amount, 0)
         }));
 
         const medianCutColors = [
@@ -532,8 +544,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const exCtx = getCtx('expense-chart');
         if (exCtx) {
             if (expenseChart) expenseChart.destroy();
-            const labels = formatLabels(expenseData, totalExpense);
-            const values = expenseData.map(d => totalExpense > 0 ? Math.round((d.value / totalExpense) * 100) : 0);
+            const labels = formatLabels(expenseData, yearlyTotalExpense);
+            const values = expenseData.map(d => yearlyTotalExpense > 0 ? Math.round((d.value / yearlyTotalExpense) * 100) : 0);
             expenseChart = new Chart(exCtx, chartConfig(labels, values));
             renderCustomLegend('expense-legend', labels, values, medianCutColors);
         }
@@ -541,8 +553,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const svCtx = getCtx('savings-chart');
         if (svCtx) {
             if (savingsChart) savingsChart.destroy();
-            const labels = formatLabels(savingsData, totalSavings);
-            const values = savingsData.map(d => totalSavings > 0 ? Math.round((d.value / totalSavings) * 100) : 0);
+            const labels = formatLabels(savingsData, yearlyTotalSavings);
+            const values = savingsData.map(d => yearlyTotalSavings > 0 ? Math.round((d.value / yearlyTotalSavings) * 100) : 0);
             savingsChart = new Chart(svCtx, chartConfig(labels, values));
             renderCustomLegend('savings-legend', labels, values, medianCutColors);
         }
@@ -551,7 +563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (trCtx) {
             if (monthlyTrendChart) monthlyTrendChart.destroy();
 
-            const currentYear = Number(currentMonth.split('-')[0]);
+            const salaryDay = state.salaryDay || 1;
             const trendLabels = [];
             const trendData = [];
 
@@ -827,6 +839,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveState(); refreshCalendars(); renderCategoryGrids(); updateStats();
     }
 
+    window.changeStatsYear = (delta) => {
+        if (!state.viewDates.stats) state.viewDates.stats = new Date().getFullYear();
+        state.viewDates.stats += delta;
+        saveState();
+        updateStats();
+    };
+
+    // 연도 변경 버튼 리스너 등록
+    const btnYearPrev = document.getElementById('btn-stats-year-prev');
+    const btnYearNext = document.getElementById('btn-stats-year-next');
+    if (btnYearPrev) btnYearPrev.onclick = () => window.changeStatsYear(-1);
+    if (btnYearNext) btnYearNext.onclick = () => window.changeStatsYear(1);
+
     function refreshCalendars() {
         renderCalendar('account-calendar', 'account');
         renderCalendar('life-calendar', 'life');
@@ -871,7 +896,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     t.date <= range.end
                 ).reduce((s, t) => s + t.amount, 0);
 
-                const budget = state.categoryBudgets[cat] || 0;
+                const budgets = state.categoryBudgets[currentMonth] || {};
+                const budget = budgets[cat] || 0;
                 let budgetHtml = '';
 
                 if (type === 'expense') {
@@ -948,10 +974,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // 지출 카테고리 정산
             state.categories.expense.forEach(cat => {
-                const b = state.categoryBudgets[cat] || 0;
+                const budgets = state.categoryBudgets[currentMonth] || {};
+                const b = budgets[cat] || 0;
                 const a = state.transactions.filter(t => t.cat === cat && t.type === 'expense' && t.date >= range.start && t.date <= range.end).reduce((s, t) => s + t.amount, 0);
                 if (b > a) {
-                    state.categoryBudgets[cat] = a;
+                    if (!state.categoryBudgets[currentMonth]) state.categoryBudgets[currentMonth] = {};
+                    state.categoryBudgets[currentMonth][cat] = a;
                     settledCount++;
                 }
             });
@@ -1127,8 +1155,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (type === 'expense') {
-            const b = state.categoryBudgets[cat] || 0;
             const currentMonth = state.viewDates.account;
+            const budgets = state.categoryBudgets[currentMonth] || {};
+            const b = budgets[cat] || 0;
             const salaryDay = state.salaryDay || 1;
             const range = getDateRangeForMonth(currentMonth, salaryDay);
             const a = state.transactions.filter(t => t.cat === cat && t.type === type && t.date >= range.start && t.date <= range.end).reduce((s, t) => s + t.amount, 0);
@@ -1300,16 +1329,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.transactions.forEach(t => { if (t.type === type && t.cat === cat) t.cat = newName; });
         currentModalTarget.category = newName;
         document.getElementById('cat-detail-title').textContent = newName;
-        if (state.categoryBudgets[cat]) {
-            state.categoryBudgets[newName] = state.categoryBudgets[cat];
-            delete state.categoryBudgets[cat];
+        // 모든 달의 예산 이름도 함께 변경
+        if (state.categoryBudgets) {
+            Object.keys(state.categoryBudgets).forEach(m => {
+                if (typeof state.categoryBudgets[m] === 'object' && state.categoryBudgets[m][cat]) {
+                    state.categoryBudgets[m][newName] = state.categoryBudgets[m][cat];
+                    delete state.categoryBudgets[m][cat];
+                }
+            });
+            // 하위 호환성 (달 없는 예산)
+            if (state.categoryBudgets[cat]) {
+                state.categoryBudgets[newName] = state.categoryBudgets[cat];
+                delete state.categoryBudgets[cat];
+            }
         }
         saveState(); renderCategoryGrids(); renderCategoryDetail(newName, type);
     };
 
     document.getElementById('save-cat-budget').onclick = () => {
         const val = parseInt(String(document.getElementById('cat-budget-input').value).replace(/[^0-9]/g, '')) || 0;
-        state.categoryBudgets[currentModalTarget.category] = val;
+        const currentMonth = state.viewDates.account;
+        if (!state.categoryBudgets[currentMonth]) state.categoryBudgets[currentMonth] = {};
+        state.categoryBudgets[currentMonth][currentModalTarget.category] = val;
         saveState(); renderCategoryGrids(); updateStats();
         openCategoryDetailModal(currentModalTarget.category, currentModalTarget.type);
     };
