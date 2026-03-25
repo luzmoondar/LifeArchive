@@ -430,10 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 예산을 우선 차감으로 적용하여 잔액 산출 (단, 수입이 0원인 달은 잔액을 0원으로 표시)
         const monthlyBalance = (monthlyIncome === 0) ? 0 : (monthlyIncome - (monthlyExpense + monthlySavings));
         const balanceEl = document.getElementById('acc-monthly-balance');
-        const assetEl = document.getElementById('acc-total-asset');
         if (balanceEl) balanceEl.textContent = `${monthlyBalance.toLocaleString()}원`;
-        if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
-        if (assetEl) assetEl.textContent = `${totalAsset.toLocaleString()}원`;
 
         // 집계 기간 표시 (툴팁 + 하단 텍스트)
         const calendarTitle = document.querySelector('#account-calendar .calendar-header h3');
@@ -1019,7 +1016,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         const titleSuffix = (type === 'income' || type === 'expense') ? ' - 내역추가' : ' - 내역 추가';
         document.getElementById('modal-title').textContent = `${category}${titleSuffix}`;
 
-        document.getElementById('modal-date').value = date || `${state.viewDates.account}-01`;
+        const todayStr = formatLocalDate(new Date());
+        if (date) {
+            document.getElementById('modal-date').value = date;
+        } else if (todayStr.startsWith(state.viewDates.account)) {
+            // 현재 보고 있는 달이 오늘이 포함된 달이면 오늘 날짜로 기본 설정
+            document.getElementById('modal-date').value = todayStr;
+        } else {
+            // 다른 달을 보고 있다면 해당 달의 1일로 설정
+            document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
+        }
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
 
@@ -1351,7 +1357,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentMonth = state.viewDates.account;
         if (!state.categoryBudgets[currentMonth]) state.categoryBudgets[currentMonth] = {};
         state.categoryBudgets[currentMonth][currentModalTarget.category] = val;
-        saveState(); renderCategoryGrids(); updateStats();
+        saveState(); 
+        renderCategoryGrids(); 
+        updateStats();
+        alert('예산이 저장되었습니다.');
         openCategoryDetailModal(currentModalTarget.category, currentModalTarget.type);
     };
 
@@ -1946,17 +1955,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         localStorage.removeItem('life-state');
     }
 
-    // --- Category Detail Modal Event Listeners ---
-    document.getElementById('save-cat-budget').onclick = () => {
-        const cat = currentModalTarget.category;
-        const b = parseAmount(document.getElementById('cat-budget-input').value);
-        state.categoryBudgets[cat] = b;
-        saveState();
-        renderCategoryGrids();
-        updateStats();
-        alert('예산이 저장되었습니다.');
-    };
-    setAmountInput(document.getElementById('cat-budget-input'));
 
     if (document.getElementById('cat-search-input')) {
         document.getElementById('cat-search-input').oninput = () => {
