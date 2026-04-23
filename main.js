@@ -1019,12 +1019,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const todayStr = formatLocalDate(new Date());
         if (date) {
             document.getElementById('modal-date').value = date;
-        } else if (todayStr.startsWith(state.viewDates.account)) {
-            // 현재 보고 있는 달이 오늘이 포함된 달이면 오늘 날짜로 기본 설정
-            document.getElementById('modal-date').value = todayStr;
         } else {
-            // 다른 달을 보고 있다면 해당 달의 1일로 설정
-            document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
+            const range = getDateRangeForMonth(state.viewDates.account, state.salaryDay);
+            if (todayStr >= range.start && todayStr <= range.end) {
+                // 오늘이 현재 보고 있는 집계 기간 내에 있으면 오늘 날짜로 설정
+                document.getElementById('modal-date').value = todayStr;
+            } else {
+                // 기간 밖이면 해당 달의 1일로 설정 (기본값)
+                document.getElementById('modal-date').value = `${state.viewDates.account}-01`;
+            }
         }
         document.getElementById('modal-name').value = '';
         document.getElementById('modal-amount').value = '';
@@ -1993,6 +1996,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { error } = await supabaseClient.auth.signUp({ email, password });
         if (error) authMsg.textContent = "회원가입 실패: " + error.message;
         else authMsg.textContent = "가입 확인 이메일을 확인해주세요! (이메일 인증 후 로그인 가능)";
+    };
+
+    document.getElementById('btn-forgot-password').onclick = async () => {
+        const email = document.getElementById('auth-email').value;
+        if (!email) {
+            authMsg.textContent = "이메일을 입력한 후 버튼을 눌러주세요.";
+            return;
+        }
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.href,
+        });
+        if (error) {
+            authMsg.textContent = "오류 발생: " + error.message;
+        } else {
+            authMsg.textContent = "비밀번호 재설정 이메일이 발송되었습니다. 이메일을 확인해주세요!";
+        }
     };
 
     // --- Service Worker Registration ---
