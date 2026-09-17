@@ -44,11 +44,11 @@
                 LifeArchive
             </h1>
             <div class="title-bar-actions">
-                <div id="sync-status-indicator" class="sync-status offline"><span></span> 대기 중</div>
-                <button onclick="manualSync()" class="sync-manual-btn">동기화</button>
-                <button id="btn-reset-all" class="reset-btn" style="display: none;">데이터 초기화</button>
+                <div id="sync-status-indicator" class="sync-status offline"><span></span> 로컬 모드</div>
+                <button onclick="manualSync()" class="sync-manual-btn" style="display: none;">동기화</button>
+                <button id="btn-reset-all" class="reset-btn">데이터 초기화</button>
                 <button id="btn-logout" class="logout-btn" style="display: none;">로그아웃</button>
-                <button id="btn-delete-account" class="delete-btn">회원탈퇴</button>
+                <button id="btn-delete-account" class="delete-btn" style="display: none;">회원탈퇴</button>
             </div>
         </div>
 
@@ -392,8 +392,8 @@
         </div>
     </div>
 
-    <!-- Auth Overlay -->
-    <div id="auth-overlay" class="modal-backdrop active">
+    <!-- Auth Overlay (로그인 비활성화) -->
+    <div id="auth-overlay" class="modal-backdrop" style="display: none;">
         <div class="modal-content card" style="max-width: 400px; text-align: center;">
             <h2 id="auth-title" style="margin-bottom: 20px;">삶기록소 시작하기</h2>
             <div class="modal-body">

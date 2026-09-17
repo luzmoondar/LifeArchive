@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Supabase에서 데이터 불러오기
     async function loadFromCloud() {
         if (!currentUser) {
-            setSyncStatus('offline', '로그인 필요');
+            setSyncStatus('offline', '로컬 모드');
             return;
         }
         isInitialLoading = true;
@@ -1872,22 +1872,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (session) {
             currentUser = session.user;
             authOverlay.classList.remove('active');
+            authOverlay.style.display = 'none';
             document.getElementById('btn-logout').style.display = 'block';
             document.getElementById('btn-reset-all').style.display = 'block';
             document.getElementById('btn-delete-account').style.display = 'block';
+            const manualSyncBtn = document.querySelector('.sync-manual-btn');
+            if (manualSyncBtn) manualSyncBtn.style.display = 'inline-block';
             // 최초 로그인/세션 복원 시에만 클라우드 데이터 불러오기
             // TOKEN_REFRESHED 시에는 달력이 이번 달로 튀지 않도록 스킵
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 loadFromCloud();
             }
         } else {
+            // [로그인 비활성화] 로그인 오버레이를 띄우지 않고 로컬 모드로 동작
             currentUser = null;
-            authOverlay.classList.add('active');
+            authOverlay.classList.remove('active');
+            authOverlay.style.display = 'none';
             document.getElementById('btn-logout').style.display = 'none';
-            document.getElementById('btn-reset-all').style.display = 'none';
+            document.getElementById('btn-reset-all').style.display = 'inline-block';
             document.getElementById('btn-delete-account').style.display = 'none';
-            // 로그아웃 시 상태 초기화 (원하는 경우)
-            resetState();
+            const manualSyncBtn = document.querySelector('.sync-manual-btn');
+            if (manualSyncBtn) manualSyncBtn.style.display = 'none';
+            setSyncStatus('offline', '로컬 모드');
+            // resetState()로 데이터를 지우지 않고 기존 로컬스토리지 데이터를 유지
             refreshAllUI();
         }
     });
